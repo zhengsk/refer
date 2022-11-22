@@ -1,5 +1,5 @@
 import { fabric } from 'fabric';
-import { Canvas, Image, Point } from 'fabric/fabric-impl';
+import type { Canvas, Image, Point } from 'fabric/fabric-impl';
 
 export default class Refer {
   canvas: Canvas;
@@ -20,11 +20,16 @@ export default class Refer {
   }
 
   fitViewElement(element: Element, callback?: () => {}) {
-    this.canvas.zoomToPoint(new Point(200, 200), 2);
+    this.canvas.zoomToPoint(new fabric.Point(200, 200), 2);
   }
 
   addEventListener(eventName: string, callback: any) {
     this.canvas.on(eventName, callback);
+  }
+
+  zoomToPoint(point: Point, value: number) {
+    this.canvas.zoomToPoint(point, value);
+    return this;
   }
 
   dispose() {

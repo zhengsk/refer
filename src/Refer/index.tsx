@@ -1,4 +1,5 @@
 import { fabric } from 'fabric';
+import type { IEvent, Point } from 'fabric/fabric-impl';
 import { useRef, useEffect } from 'react'
 import Refer from './Refer';
 
@@ -14,8 +15,11 @@ const ReferCanvas = () => {
 
     ReferInstance.addImgFromURL('https://gd-hbimg.huaban.com/c5300f7aff47943aa4fb9d56b8dc764a4c5076aed3245-FaxWud_fw480webp');
 
-    ReferInstance.addEventListener('mouse:wheel', (e: WheelEvent) => {
-      console.info(e);
+    ReferInstance.addEventListener('mouse:wheel', (e: IEvent) => {
+      const event = e.e as WheelEvent;
+      const zoom = ReferInstance.canvas.getZoom();
+      const newZoom = Math.min(50, Math.max(0.02, zoom * (event.deltaY > 0 ? 0.9 : 1.1)));
+      ReferInstance.zoomToPoint(e.pointer as Point, newZoom);
     })
 
     return () => {
