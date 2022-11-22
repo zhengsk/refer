@@ -6,6 +6,34 @@ export default class Refer {
 
   constructor(fabricCanvas: Canvas ) {
     this.canvas = fabricCanvas;
+    this.setDefaultStyle();
+  }
+
+  // Objeft default style
+  private setDefaultStyle() {
+    fabric.Object.prototype.set({
+      transparentCorners: false,
+      
+      // border
+      // borderDashArray: [5,5],
+      borderColor: '#ff5967',
+      borderScaleFactor: 2,
+
+      // corner
+      cornerSize: 10,
+      cornerColor: '#ff5967',
+      cornerStrokeColor: '#ffffff',
+      cornerStyle: 'circle',
+
+      // controls
+      _controlsVisibility: {
+        ml: false,
+        mr: false,
+        mb: false,
+        mt: false,
+        mtr: false,
+      }
+    });
   }
 
   addImg() {

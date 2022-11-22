@@ -28,6 +28,11 @@ const ReferCanvas = () => {
     }
   }, []);
 
+  // Drop image
+  useEffect(() => {
+    
+  }, []);
+
   return (
     <canvas
       width={vw}
