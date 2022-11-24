@@ -1,5 +1,5 @@
 import { fabric } from 'fabric';
-import type { Canvas, Image, Point } from 'fabric/fabric-impl';
+import { Canvas, Image, Object } from 'fabric/fabric-impl';
 
 export default class Refer {
   canvas: Canvas;
@@ -47,8 +47,45 @@ export default class Refer {
     });
   }
 
-  fitViewElement(element: Element, callback?: () => {}) {
-    this.canvas.zoomToPoint(new fabric.Point(200, 200), 2);
+  fitViewElement(element?: Object, callback?: () => {}) {
+    const { canvas } = this;
+    canvas.renderAll();
+    const ele: Object = element || canvas.getActiveObject();
+    
+    if (ele) {
+      const zoom = canvas.getZoom();
+      
+      const canvasWidth = canvas.getWidth();
+      const canvasHeight = canvas.getHeight();
+      
+      const elementWidth = ele.getScaledWidth() * zoom;
+      const elementHeight = ele.getScaledHeight() * zoom;
+      
+      const widthRatio = canvasWidth / elementWidth;
+      const heightRatio = canvasHeight / elementHeight;
+
+      console.info(elementWidth, elementHeight);
+      
+      
+      const ratio = Math.min(widthRatio, heightRatio);
+      
+
+      const eleCenterPoint = ele.getCenterPoint();
+      const canvasCenterPoint = canvas.getVpCenter();
+      console.info(canvasCenterPoint, eleCenterPoint);
+      console.info(canvasCenterPoint.x - eleCenterPoint.x, canvasCenterPoint.y - eleCenterPoint.y);
+      
+      const panSize =  new fabric.Point(
+        (canvasCenterPoint.x - eleCenterPoint.x) * zoom,
+        (canvasCenterPoint.y - eleCenterPoint.y) * zoom
+      );
+      
+      canvas.setZoom(zoom * ratio);
+      // canvas.zoomToPoint(canvasCenterPoint, zoom * ratio);
+
+      // canvas.relativePan(panSize);
+
+    }
   }
 
   addEventListener(eventName: string, callback: any) {

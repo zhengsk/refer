@@ -13,9 +13,11 @@ const ReferCanvas = () => {
     const options = { };
     const canvas = new fabric.Canvas(canvasEl.current, options);
     const ReferInstance = new Refer(canvas);
+    (window as any).Refer = ReferInstance;
 
     ReferInstance.addImgFromURL('https://gd-hbimg.huaban.com/c5300f7aff47943aa4fb9d56b8dc764a4c5076aed3245-FaxWud_fw480webp');
 
+    // 鼠标滚动缩放
     ReferInstance.addEventListener('mouse:wheel', (e: IEvent) => {
       const event = e.e as WheelEvent;
       const zoom = ReferInstance.canvas.getZoom();
@@ -23,12 +25,11 @@ const ReferCanvas = () => {
       ReferInstance.zoomToPoint(e.pointer as Point, newZoom);
     });
 
+    // 拖拽本地图片
     ReferInstance.addEventListener('drop', (e: IEvent) => {
       const originEvent = e.e as DragEvent;
       originEvent.preventDefault();
 
-      debugger;
-      console.info(e);
       const files = originEvent.dataTransfer?.files;
       if (files) {
         for (const file of files) {
@@ -43,6 +44,11 @@ const ReferCanvas = () => {
           }
         }
       }
+    });
+
+    // 双击自适应窗口
+    ReferInstance.addEventListener('mouse:dblclick', (e: IEvent) => {
+      ReferInstance.fitViewElement();
     });
 
     return () => {
