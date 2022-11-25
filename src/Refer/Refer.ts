@@ -1,5 +1,5 @@
 import { fabric } from 'fabric';
-import { Canvas, Image, Object } from 'fabric/fabric-impl';
+import type { Canvas, Image, Object, Point } from 'fabric/fabric-impl';
 
 export default class Refer {
   canvas: Canvas;
@@ -53,37 +53,41 @@ export default class Refer {
     const ele: Object = element || canvas.getActiveObject();
     
     if (ele) {
+      const offset = 20;
       const zoom = canvas.getZoom();
       
       const canvasWidth = canvas.getWidth();
       const canvasHeight = canvas.getHeight();
       
-      const elementWidth = ele.getScaledWidth() * zoom;
-      const elementHeight = ele.getScaledHeight() * zoom;
+      const elementWidth = (ele.getScaledWidth() + offset) * zoom;
+      const elementHeight = (ele.getScaledHeight() + offset) * zoom;
       
-      const widthRatio = canvasWidth / elementWidth;
-      const heightRatio = canvasHeight / elementHeight;
+      const widthRatio = canvasWidth / (elementWidth);
+      const heightRatio = canvasHeight / (elementHeight);
 
-      console.info(elementWidth, elementHeight);
-      
-      
       const ratio = Math.min(widthRatio, heightRatio);
-      
 
       const eleCenterPoint = ele.getCenterPoint();
-      const canvasCenterPoint = canvas.getVpCenter();
-      console.info(canvasCenterPoint, eleCenterPoint);
-      console.info(canvasCenterPoint.x - eleCenterPoint.x, canvasCenterPoint.y - eleCenterPoint.y);
       
-      const panSize =  new fabric.Point(
-        (canvasCenterPoint.x - eleCenterPoint.x) * zoom,
-        (canvasCenterPoint.y - eleCenterPoint.y) * zoom
+      const absolutePanSize = new fabric.Point(
+        (eleCenterPoint.x) * zoom  - canvasWidth / 2,
+        (eleCenterPoint.y) * zoom  - canvasHeight / 2
       );
+      canvas.absolutePan(absolutePanSize);
       
-      canvas.setZoom(zoom * ratio);
-      // canvas.zoomToPoint(canvasCenterPoint, zoom * ratio);
+      // const canvasCenterPoint = canvas.getVpCenter();
+      // const relativePanSize =  new fabric.Point(
+      //   (canvasCenterPoint.x - eleCenterPoint.x) * zoom,
+      //   (canvasCenterPoint.y - eleCenterPoint.y) * zoom
+      // );
+      // canvas.relativePan(relativePanSize);
 
-      // canvas.relativePan(panSize);
+      const eleRect = ele.getBoundingRect();
+      const point = new fabric.Point(
+        eleRect.left + eleRect.width / 2,
+        eleRect.top + eleRect.height / 2
+      );
+      canvas.zoomToPoint(point, zoom * ratio);
 
     }
   }

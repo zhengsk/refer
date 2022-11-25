@@ -15,13 +15,32 @@ const ReferCanvas = () => {
     const ReferInstance = new Refer(canvas);
     (window as any).Refer = ReferInstance;
 
+    var rect = new fabric.Rect({
+      left: -10,
+      top: -10,
+      fill: 'red',
+      width: 20,
+      height: 20,
+    });
+
+    ReferInstance.canvas.add(rect);
+
+    var circle = new fabric.Circle({
+      left: 240-10,
+      top: 666-10,
+      fill: 'yellow',
+      radius: 10,
+    });
+    ReferInstance.canvas.add(circle);
+
+
     ReferInstance.addImgFromURL('https://gd-hbimg.huaban.com/c5300f7aff47943aa4fb9d56b8dc764a4c5076aed3245-FaxWud_fw480webp');
 
     // 鼠标滚动缩放
     ReferInstance.addEventListener('mouse:wheel', (e: IEvent) => {
       const event = e.e as WheelEvent;
       const zoom = ReferInstance.canvas.getZoom();
-      const newZoom = Math.min(50, Math.max(0.02, zoom * (event.deltaY > 0 ? 0.9 : 1.1)));
+      const newZoom = Math.min(100, Math.max(0.01, zoom * (event.deltaY > 0 ? 0.9 : 1.1)));
       ReferInstance.zoomToPoint(e.pointer as Point, newZoom);
     });
 
