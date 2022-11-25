@@ -47,6 +47,7 @@ export default class Refer {
     });
   }
 
+  // Fit element to viewport
   fitViewElement(element?: Object, callback?: () => {}) {
     const { canvas } = this;
     canvas.renderAll();
@@ -89,6 +90,7 @@ export default class Refer {
       );
       canvas.zoomToPoint(point, zoom * ratio);
 
+      if (callback) { callback(); }
     }
   }
 
