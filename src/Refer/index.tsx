@@ -8,6 +8,7 @@ const vh = document.documentElement.clientHeight;
 
 const ReferCanvas = () => {
   const canvasEl = useRef(null);
+  const {isFitviewMode, setIsFitViewMode} = useState(false);
   
   useEffect(() => {
     const options = { };
@@ -34,7 +35,8 @@ const ReferCanvas = () => {
     ReferInstance.canvas.add(circle);
 
 
-    ReferInstance.addImgFromURL('https://gd-hbimg.huaban.com/c5300f7aff47943aa4fb9d56b8dc764a4c5076aed3245-FaxWud_fw480webp');
+    ReferInstance.addImgFromURL('https://gd-hbimg.huaban.com/c5300f7aff47943aa4fb9d56b8dc764a4c5076aed3245-FaxWud');
+    ReferInstance.addImgFromURL('https://gd-hbimg.huaban.com/54a1785cfc4b7d196884a63fdc510d85ab323fb039ffb-fxWgbl');
 
     // 鼠标滚动缩放
     ReferInstance.addEventListener('mouse:wheel', (e: IEvent) => {
@@ -49,12 +51,33 @@ const ReferCanvas = () => {
       const originEvent = e.e as DragEvent;
       originEvent.preventDefault();
 
-      const files = originEvent.dataTransfer?.files;
-      if (files) {
-        for (const file of files) {
-          if (/^image\/*/.test(file.type)) {
+      const items = originEvent.dataTransfer?.items || [];
+      for (let i = 0; i < items.length; i += 1) {
+        const item = items[i];
+        if ((item.kind === 'string') && (item.type.match('^text/plain'))) {
+          // Add Text node
+        } else if ((item.kind === 'string') && (item.type.match('^text/html'))) {
+          // Get image from html
+          item.getAsString(html => {
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            const imgs = div.querySelectorAll('img');
+            imgs.forEach(img => {
+              // TODO: Get Large image src OR srcset
+              ReferInstance.addImgFromURL(img.src);
+            });
+          });
+
+        } else if ((item.kind === 'string') && (item.type.match('^text/uri-list'))) {
+          // url
+          item.getAsString(src => {
+            ReferInstance.addImgFromURL(src);
+          });
+        } else if ((item.kind === 'file') && (item.type.match('^image/'))) {
+          // Drag items item is an image file
+          const file = item.getAsFile();
+          if (file && /^image\/*/.test(file.type)) {
             const reader = new FileReader();
-            
             reader.readAsDataURL(file);
             reader.addEventListener('load', function(e) {
               ReferInstance.addImgFromURL(this.result as string);
@@ -67,27 +90,22 @@ const ReferCanvas = () => {
 
     // 双击自适应窗口
     ReferInstance.addEventListener('mouse:dblclick', (e: IEvent) => {
+      const { zoom, panPoint } = ReferInstance.getViewStatus();
       ReferInstance.fitViewElement();
+
+      setTimeout(() => {
+        ReferInstance.canvas.zoomToPoint(new fabric.Point(-panPoint.x, -panPoint.y ), zoom );
+        ReferInstance.canvas.absolutePan(panPoint);
+      }, 2000);
     });
+
+    // ReferInstance.canvas.map
 
     return () => {
       canvas.dispose();
       ReferInstance.dispose();
     }
   }, []);
-
-  // Drop image
-  // useEffect(() => {
-  //   debugger;
-  //   const canvasDom = canvasEl.current;
-  //   if (canvasDom) {
-  //     (canvasDom as HTMLElement).addEventListener('drop', (e) => {
-  //       e.preventDefault();
-  //       debugger;
-  //       console.info(e.dataTransfer);
-  //     })
-  //   }
-  // }, []);
 
   return (
     <canvas

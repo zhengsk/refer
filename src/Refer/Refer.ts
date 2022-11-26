@@ -40,6 +40,24 @@ export default class Refer {
 
   }
 
+  // Get canvas view status：zoom and absolute pan value
+  getViewStatus() {
+    const { canvas } = this;
+    const zoom = canvas.getZoom();
+    const vpCenter = canvas.getVpCenter();
+    const center = canvas.getCenter();
+
+    const panPoint = new fabric.Point(
+      vpCenter.x * zoom - center.left,
+      vpCenter.y * zoom - center.top
+    );
+
+    return {
+      zoom,
+      panPoint,
+    }
+  }
+
   addImgFromURL(src: string, callback?: (img: Image) => {}) {
     fabric.Image.fromURL(src, (oImg) => {
       this.canvas.add(oImg);
@@ -102,6 +120,7 @@ export default class Refer {
     this.canvas.zoomToPoint(point, value);
     return this;
   }
+
 
   dispose() {
     // TODO: destory canvas
