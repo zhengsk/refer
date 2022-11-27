@@ -1,6 +1,6 @@
 import { fabric } from 'fabric';
 import type { IEvent, Point } from 'fabric/fabric-impl';
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from './Refer';
 
 const vw = document.documentElement.clientWidth;
@@ -55,40 +55,8 @@ const ReferCanvas = () => {
       const originEvent = e.e as DragEvent;
       originEvent.preventDefault();
 
-      const items = originEvent.dataTransfer?.items || [];
-      for (let i = 0; i < items.length; i += 1) {
-        const item = items[i];
-        if ((item.kind === 'string') && (item.type.match('^text/plain'))) {
-          // Add Text node
-        } else if ((item.kind === 'string') && (item.type.match('^text/html'))) {
-          // Get image from html
-          item.getAsString(html => {
-            const div = document.createElement('div');
-            div.innerHTML = html;
-            const imgs = div.querySelectorAll('img');
-            imgs.forEach(img => {
-              // TODO: Get Large image src OR srcset
-              Refer.addImgFromURL(img.src);
-            });
-          });
-
-        } else if ((item.kind === 'string') && (item.type.match('^text/uri-list'))) {
-          // url
-          item.getAsString(src => {
-            Refer.addImgFromURL(src);
-          });
-        } else if ((item.kind === 'file') && (item.type.match('^image/'))) {
-          // Drag items item is an image file
-          const file = item.getAsFile();
-          if (file && /^image\/*/.test(file.type)) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.addEventListener('load', function(e) {
-              Refer.addImgFromURL(this.result as string);
-            });
-          }
-        }
-      }
+      const items = originEvent.dataTransfer?.items;
+      addFromDataTransfer(items);
     });
 
     // 双击自适应窗口
@@ -102,15 +70,77 @@ const ReferCanvas = () => {
       }, 2000);
     });
 
-    
-    
     return () => {
       canvas.dispose();
       Refer.dispose();
     }
   }, []);
 
-  // 拖拽能力
+  const addFromDataTransfer = useCallback((DataTransferItemList: DataTransferItemList | undefined) => {
+    const Refer = ReferRef.current
+    if (Refer) {
+      const items = DataTransferItemList || [];
+      const appendedMap: {[key: string]: boolean} = {}; // Prevent add repeat
+
+      for (let i = 0; i < items.length; i += 1) {
+        debugger;
+        const item = items[i];
+        if ((item.kind === 'string') && (item.type.match('^text/plain'))) {
+          // Add Text node
+        } else if ((item.kind === 'string') && (item.type.match('^text/html'))) {
+          // Get image from html
+          item.getAsString(html => {
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            const imgs = div.querySelectorAll('img');
+            imgs.forEach(img => {
+              if (!appendedMap[img.src]) {
+                console.count('html');
+                console.info(img.src);
+                // TODO: Get Large image src OR srcset
+                Refer.addImgFromURL(img.src);
+                appendedMap[img.src] = true;
+              }
+            });
+          });
+  
+        } else if ((item.kind === 'string') && (item.type.match('^text/uri-list'))) {
+          // url
+          item.getAsString(src => {
+            if (!appendedMap[src]) {
+              console.count('uri-list');
+              Refer.addImgFromURL(src);
+              appendedMap[src] = true;
+            }
+          });
+        } else if ((item.kind === 'file') && (item.type.match('^image/'))) {
+          // Drag items item is an image file
+          const file = item.getAsFile();
+          if (file && /^image\/*/.test(file.type)) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            console.count('file');
+            reader.addEventListener('load', function(e) {
+              Refer.addImgFromURL(this.result as string);
+            });
+          }
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+      ownerDocument.addEventListener('paste', (e) => {
+        e.preventDefault();
+        addFromDataTransfer(e.clipboardData?.items);
+      }) 
+    }
+  })
+
+  // 拖拽移动画布
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
