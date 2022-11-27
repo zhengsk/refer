@@ -3,10 +3,16 @@ import type { Canvas, Image, Object, Point } from 'fabric/fabric-impl';
 
 export default class Refer {
   canvas: Canvas;
+  dragMode: boolean;
+  dragging: boolean;
 
   constructor(fabricCanvas: Canvas ) {
     this.canvas = fabricCanvas;
+    this.dragMode = false;
+    this.dragging = false;
+
     this.setDefaultStyle();
+    this.initDragMode();
   }
 
   // Objeft default style
@@ -121,6 +127,46 @@ export default class Refer {
     return this;
   }
 
+  initDragMode() {
+    let oPoint: Point;
+    let oTransform: number[] = [];
+    this.canvas.on('mouse:down', (e) => {
+      if (this.dragMode) {
+        this.dragging = true;
+        if (e.pointer) {
+          oPoint = e.pointer;
+        }
+
+        if (this.canvas.viewportTransform) {
+          oTransform = this.canvas.viewportTransform;
+        }
+
+        this.canvas.setCursor('grabbing');
+      }         
+    });
+
+    this.canvas.on('mouse:move', (e) => {
+      if (this.dragging && e.pointer) {
+        const dx = e.pointer.x - oPoint?.x;
+        const dy = e.pointer.y - oPoint?.y;
+        const transform = [...oTransform]
+        transform[4] += dx;
+        transform[5] += dy;
+        this.canvas.setViewportTransform(transform);
+      }
+    });
+
+    this.canvas.on('mouse:up', (e) => {
+      this.dragging = false;
+    });
+  }
+
+  setDragMode(draggable: boolean) {
+    this.dragMode = draggable;
+
+    this.canvas.setCursor( draggable ? 'grab' : 'default');
+    this.canvas.interactive = !draggable;
+  }
 
   dispose() {
     // TODO: destory canvas

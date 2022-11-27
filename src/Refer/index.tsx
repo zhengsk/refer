@@ -1,20 +1,24 @@
 import { fabric } from 'fabric';
 import type { IEvent, Point } from 'fabric/fabric-impl';
 import { useRef, useEffect, useState } from 'react'
-import Refer from './Refer';
+import ReferCreator from './Refer';
 
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
 
 const ReferCanvas = () => {
-  const canvasEl = useRef(null);
+  const ReferRef = useRef<ReferCreator>();
+  const canvasEl = useRef<HTMLCanvasElement|null>(null);
   const {isFitviewMode, setIsFitViewMode} = useState(false);
-  
+
+
   useEffect(() => {
     const options = { };
     const canvas = new fabric.Canvas(canvasEl.current, options);
-    const ReferInstance = new Refer(canvas);
-    (window as any).Refer = ReferInstance;
+    const Refer = new ReferCreator(canvas);
+
+    ReferRef.current = Refer;
+    (window as any).Refer = Refer;
 
     var rect = new fabric.Rect({
       left: -10,
@@ -24,7 +28,7 @@ const ReferCanvas = () => {
       height: 20,
     });
 
-    ReferInstance.canvas.add(rect);
+    Refer.canvas.add(rect);
 
     var circle = new fabric.Circle({
       left: 240-10,
@@ -32,22 +36,22 @@ const ReferCanvas = () => {
       fill: 'yellow',
       radius: 10,
     });
-    ReferInstance.canvas.add(circle);
+    Refer.canvas.add(circle);
 
 
-    ReferInstance.addImgFromURL('https://gd-hbimg.huaban.com/c5300f7aff47943aa4fb9d56b8dc764a4c5076aed3245-FaxWud');
-    ReferInstance.addImgFromURL('https://gd-hbimg.huaban.com/54a1785cfc4b7d196884a63fdc510d85ab323fb039ffb-fxWgbl');
+    Refer.addImgFromURL('https://gd-hbimg.huaban.com/c5300f7aff47943aa4fb9d56b8dc764a4c5076aed3245-FaxWud');
+    Refer.addImgFromURL('https://gd-hbimg.huaban.com/54a1785cfc4b7d196884a63fdc510d85ab323fb039ffb-fxWgbl');
 
     // 鼠标滚动缩放
-    ReferInstance.addEventListener('mouse:wheel', (e: IEvent) => {
+    Refer.addEventListener('mouse:wheel', (e: IEvent) => {
       const event = e.e as WheelEvent;
-      const zoom = ReferInstance.canvas.getZoom();
+      const zoom = Refer.canvas.getZoom();
       const newZoom = Math.min(100, Math.max(0.01, zoom * (event.deltaY > 0 ? 0.9 : 1.1)));
-      ReferInstance.zoomToPoint(e.pointer as Point, newZoom);
+      Refer.zoomToPoint(e.pointer as Point, newZoom);
     });
 
     // 拖拽本地图片
-    ReferInstance.addEventListener('drop', (e: IEvent) => {
+    Refer.addEventListener('drop', (e: IEvent) => {
       const originEvent = e.e as DragEvent;
       originEvent.preventDefault();
 
@@ -64,14 +68,14 @@ const ReferCanvas = () => {
             const imgs = div.querySelectorAll('img');
             imgs.forEach(img => {
               // TODO: Get Large image src OR srcset
-              ReferInstance.addImgFromURL(img.src);
+              Refer.addImgFromURL(img.src);
             });
           });
 
         } else if ((item.kind === 'string') && (item.type.match('^text/uri-list'))) {
           // url
           item.getAsString(src => {
-            ReferInstance.addImgFromURL(src);
+            Refer.addImgFromURL(src);
           });
         } else if ((item.kind === 'file') && (item.type.match('^image/'))) {
           // Drag items item is an image file
@@ -80,8 +84,7 @@ const ReferCanvas = () => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.addEventListener('load', function(e) {
-              ReferInstance.addImgFromURL(this.result as string);
-              console.info(this.result);
+              Refer.addImgFromURL(this.result as string);
             });
           }
         }
@@ -89,21 +92,54 @@ const ReferCanvas = () => {
     });
 
     // 双击自适应窗口
-    ReferInstance.addEventListener('mouse:dblclick', (e: IEvent) => {
-      const { zoom, panPoint } = ReferInstance.getViewStatus();
-      ReferInstance.fitViewElement();
+    Refer.addEventListener('mouse:dblclick', (e: IEvent) => {
+      const { zoom, panPoint } = Refer.getViewStatus();
+      Refer.fitViewElement();
 
       setTimeout(() => {
-        ReferInstance.canvas.zoomToPoint(new fabric.Point(-panPoint.x, -panPoint.y ), zoom );
-        ReferInstance.canvas.absolutePan(panPoint);
+        Refer.canvas.zoomToPoint(new fabric.Point(-panPoint.x, -panPoint.y ), zoom );
+        Refer.canvas.absolutePan(panPoint);
       }, 2000);
     });
 
-    // ReferInstance.canvas.map
-
+    
+    
     return () => {
       canvas.dispose();
-      ReferInstance.dispose();
+      Refer.dispose();
+    }
+  }, []);
+
+  // 拖拽能力
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+
+      const keydownAction = (e: KeyboardEvent) => {
+        if (e.code === 'Space' || e.key === ' ') {
+          if (ReferRef.current) {
+            e.preventDefault();
+            ReferRef.current.setDragMode(true);
+          }
+        }
+      }
+
+      const keyupAction = (e: KeyboardEvent) => {
+        if (e.code === 'Space' || e.key === ' ') {
+          if (ReferRef.current) {
+            ReferRef.current.setDragMode(false);
+          }
+        }
+      }
+
+      ownerDocument.addEventListener('keydown', keydownAction);
+      ownerDocument.addEventListener('keyup', keyupAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+        ownerDocument.addEventListener('keyup', keyupAction);
+      }
     }
   }, []);
 
