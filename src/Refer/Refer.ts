@@ -1,5 +1,5 @@
 import { fabric } from 'fabric';
-import type { Canvas, Image, Object, Point } from 'fabric/fabric-impl';
+import { Canvas, Image, Object, Point } from 'fabric/fabric-impl';
 
 export default class Refer {
   canvas: Canvas;
@@ -146,6 +146,10 @@ export default class Refer {
     });
 
     this.canvas.on('mouse:move', (e) => {
+      if (this.dragMode) {
+        this.canvas.setCursor('grab');
+      }
+      
       if (this.dragging && e.pointer) {
         const dx = e.pointer.x - oPoint?.x;
         const dy = e.pointer.y - oPoint?.y;
@@ -153,20 +157,30 @@ export default class Refer {
         transform[4] += dx;
         transform[5] += dy;
         this.canvas.setViewportTransform(transform);
+
+        this.canvas.setCursor('grabbing');
       }
     });
 
     this.canvas.on('mouse:up', (e) => {
       this.dragging = false;
+
+      if (this.dragMode) {
+        this.canvas.setCursor('grab');
+      }
     });
   }
 
   setDragMode(draggable: boolean) {
     this.dragMode = draggable;
-
     this.canvas.setCursor( draggable ? 'grab' : 'default');
     this.canvas.interactive = !draggable;
-  }
+
+    //  TODO: Not all object is selectable
+    this.canvas.forEachObject(object => {
+      object.selectable = !draggable;
+    });
+  }   
 
   dispose() {
     // TODO: destory canvas

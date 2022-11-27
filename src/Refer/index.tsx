@@ -9,7 +9,7 @@ const vh = document.documentElement.clientHeight;
 const ReferCanvas = () => {
   const ReferRef = useRef<ReferCreator>();
   const canvasEl = useRef<HTMLCanvasElement|null>(null);
-  const {isFitviewMode, setIsFitViewMode} = useState(false);
+  // const {isFitviewMode, setIsFitViewMode} = useState(false);
 
 
   useEffect(() => {
@@ -118,7 +118,7 @@ const ReferCanvas = () => {
 
       const keydownAction = (e: KeyboardEvent) => {
         if (e.code === 'Space' || e.key === ' ') {
-          if (ReferRef.current) {
+          if (ReferRef.current && !ReferRef.current.dragMode) {
             e.preventDefault();
             ReferRef.current.setDragMode(true);
           }
