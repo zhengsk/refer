@@ -201,6 +201,19 @@ export default class Refer {
     });
   }
 
+  // Select element
+  selectElement(elements?: Object | Object[]) {
+    if (!elements) {
+      elements = this.canvas.getObjects();
+    } if (!Array.isArray(elements)) {
+      elements = [elements];
+    }
+
+    const selection = new fabric.ActiveSelection(elements, { canvas: this.canvas });
+    this.canvas.setActiveObject(selection);
+    this.canvas.requestRenderAll();
+  }
+
   // Delete element
   deleteElement(elements?: Object | Object[]) {
     if (!elements) {

@@ -95,7 +95,29 @@ const ReferCanvas = () => {
     }
   }, []);
 
-  // 删除选中元素
+  // 键盘：全选
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+
+      const keydownAction = (e: KeyboardEvent) => {
+        if ((e.code === 'KeyA' || e.key === 'a') && (e.ctrlKey || e.metaKey)) {
+          if (ReferRef.current) {
+            e.preventDefault();
+            ReferRef.current.selectElement();
+          }
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
+  // 键盘：删除选中元素
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
