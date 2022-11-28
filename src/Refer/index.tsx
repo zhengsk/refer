@@ -122,13 +122,11 @@ const ReferCanvas = () => {
     const Refer = ReferRef.current;
     if (Refer) {
       Refer.addEventListener('mouse:dblclick', (e: IEvent) => {
-        const { zoom, panPoint } = Refer.getViewStatus();
-        Refer.fitViewElement();
-
-        setTimeout(() => {
-          Refer.canvas.zoomToPoint(new fabric.Point(-panPoint.x, -panPoint.y ), zoom );
-          Refer.canvas.absolutePan(panPoint);
-        }, 2000);
+        if (!Refer.preViewStatus) {
+          Refer.fitViewElement();
+        } else {
+          Refer.restorePreViewStatus();
+        }
       });
     }
   }, []);

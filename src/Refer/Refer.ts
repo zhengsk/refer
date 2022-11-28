@@ -6,6 +6,8 @@ export default class Refer {
   dragMode: boolean;
   dragging: boolean;
 
+  preViewStatus: {zoom: number, panPoint: Point} | undefined;
+
   constructor(fabricCanvas: Canvas ) {
     this.canvas = fabricCanvas;
     this.dragMode = false;
@@ -47,7 +49,7 @@ export default class Refer {
   }
 
   // Get canvas view status：zoom and absolute pan value
-  getViewStatus() {
+  setPreViewStatus() {
     const { canvas } = this;
     const zoom = canvas.getZoom();
     const vpCenter = canvas.getVpCenter();
@@ -58,17 +60,21 @@ export default class Refer {
       vpCenter.y * zoom - center.top
     );
 
-    return {
+    this.preViewStatus = {
       zoom,
       panPoint,
     }
   }
 
-  addImgFromURL(src: string, callback?: (img: Image) => {}) {
-    fabric.Image.fromURL(src, (oImg) => {
-      this.canvas.add(oImg);
-      callback?.call(this, oImg);
-    });
+  // Restore preview status
+  restorePreViewStatus() {
+    if (this.preViewStatus) {
+      const { zoom, panPoint } = this.preViewStatus;
+      this.canvas.zoomToPoint(new fabric.Point(-panPoint.x, -panPoint.y ), zoom );
+      this.canvas.absolutePan(panPoint);
+
+      this.preViewStatus = undefined;
+    }
   }
 
   // Fit element to viewport
@@ -78,6 +84,8 @@ export default class Refer {
     const ele: Object = element || canvas.getActiveObject();
     
     if (ele) {
+      this.setPreViewStatus(); // Save status
+
       const offset = 20;
       const zoom = canvas.getZoom();
       
@@ -116,6 +124,13 @@ export default class Refer {
 
       if (callback) { callback(); }
     }
+  }
+
+  addImgFromURL(src: string, callback?: (img: Image) => {}) {
+    fabric.Image.fromURL(src, (oImg) => {
+      this.canvas.add(oImg);
+      callback?.call(this, oImg);
+    });
   }
 
   addEventListener(eventName: string, callback: any) {
