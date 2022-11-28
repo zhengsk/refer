@@ -122,6 +122,10 @@ export default class Refer {
     this.canvas.on(eventName, callback);
   }
 
+  removeEventListener(eventName: string, callback: any) {
+    this.canvas.off(eventName, callback);
+  }
+
   zoomToPoint(point: Point, value: number) {
     this.canvas.zoomToPoint(point, value);
     return this;
