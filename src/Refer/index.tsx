@@ -95,6 +95,28 @@ const ReferCanvas = () => {
     }
   }, []);
 
+  // 删除选中元素
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+
+      const keydownAction = (e: KeyboardEvent) => {
+        if (e.code === 'Delete' || e.key === 'Delete') {
+          if (ReferRef.current) {
+            e.preventDefault();
+            ReferRef.current.deleteElement();
+          }
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
   // 双击自适应窗口
   useEffect(() => {
     const Refer = ReferRef.current;

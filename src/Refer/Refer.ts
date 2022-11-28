@@ -184,7 +184,21 @@ export default class Refer {
     this.canvas.forEachObject(object => {
       object.selectable = !draggable;
     });
-  }   
+  }
+
+  // Delete element
+  deleteElement(elements?: Object | Object[]) {
+    if (!elements) {
+      elements = this.canvas.getActiveObjects();
+    } else if (!Array.isArray(elements)) {
+      elements = [elements];
+    }
+
+    elements.forEach(ele => {
+      this.canvas.remove(ele);
+    });
+    this.canvas.discardActiveObject();
+  }
 
   dispose() {
     // TODO: destory canvas
