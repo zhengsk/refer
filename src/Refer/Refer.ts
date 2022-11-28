@@ -45,6 +45,10 @@ export default class Refer {
     });
   }
 
+  getActiveObject() {
+    return this.canvas.getActiveObject();
+  }
+
   addImg() {
 
   }
@@ -230,7 +234,7 @@ export default class Refer {
   }
 
   // Copy element to clipboard
-  copySelectElement(elements?: Object | Object[]) {
+  copyElement(elements?: Object | Object[], event?: ClipboardEvent) {
     if (!elements) {
       elements = [this.canvas.getActiveObject()];
     } if (!Array.isArray(elements)) {
@@ -240,15 +244,17 @@ export default class Refer {
     this.clipboard = [];
     elements.forEach(element => element.clone((cloned: Object) => {
       this.clipboard.push(cloned);
-      console.info(this.clipboard);
     }));
 
+    if (event) {
+      event.clipboardData?.setData('text/plain', '');
+    }
   }
 
   // Paste clipboard element
   pasteElement(elements?: Object | Object[]) {
     if (!elements) {
-      elements = this.canvas.getObjects();
+      elements = this.canvas.getActiveObjects();
     } if (!Array.isArray(elements)) {
       elements = [elements];
     }

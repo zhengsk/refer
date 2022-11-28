@@ -95,72 +95,6 @@ const ReferCanvas = () => {
     }
   }, []);
 
-  // 键盘：全选 Command + A
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-
-      const keydownAction = (e: KeyboardEvent) => {
-        if ((e.code === 'KeyA' || e.key === 'a') && (e.ctrlKey || e.metaKey)) {
-          if (ReferRef.current) {
-            e.preventDefault();
-            ReferRef.current.selectElement();
-          }
-        }
-      }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
-
-  // 键盘：Copy Command + C
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-
-      const keydownAction = (e: KeyboardEvent) => {
-        if ((e.code === 'KeyC' || e.key === 'c') && (e.ctrlKey || e.metaKey)) {
-          if (ReferRef.current) {
-            e.preventDefault();
-            ReferRef.current.copySelectElement();
-          }
-        }
-      }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
-
-  // 键盘：Copy Command + V
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-
-      const keydownAction = (e: KeyboardEvent) => {
-        if ((e.code === 'KeyV' || e.key === 'v') && (e.ctrlKey || e.metaKey)) {
-          if (ReferRef.current) {
-            e.preventDefault();
-            ReferRef.current.pasteElement();
-          }
-        }
-      }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);  
-
   // 键盘：删除选中元素
   useEffect(() => {
     const canvasDom = canvasEl.current;
@@ -199,7 +133,9 @@ const ReferCanvas = () => {
 
   // 拖拽或粘贴对象（dataTransfer）到画布
   const addFromDataTransfer = useCallback((DataTransferItemList: DataTransferItemList | undefined) => {
-    const Refer = ReferRef.current
+    const Refer = ReferRef.current;
+    let addLength = 0;
+
     if (Refer) {
       const items = DataTransferItemList || [];
       const appendedMap: {[key: string]: boolean} = {}; // Prevent add repeat
@@ -219,11 +155,10 @@ const ReferCanvas = () => {
             const imgs = div.querySelectorAll('img');
             imgs.forEach(img => {
               if (!appendedMap[img.src]) {
-                console.count('html');
-                console.info(img.src);
                 // TODO: Get Large image src OR srcset
                 Refer.addImgFromURL(img.src);
                 appendedMap[img.src] = true;
+                addLength += 1;
               }
             });
           });
@@ -237,6 +172,8 @@ const ReferCanvas = () => {
               appendedMap[src] = true;
             }
           });
+
+          addLength += 1;
         } else if (!hasHtml && (item.kind === 'file') && (item.type.match('^image/'))) {
           // Drag items item is an image file
           const file = item.getAsFile();
@@ -247,10 +184,14 @@ const ReferCanvas = () => {
             reader.addEventListener('load', function(e) {
               Refer.addImgFromURL(this.result as string);
             });
+
+            addLength += 1;
           }
         }
       }
+
     }
+    return addLength;
   }, []);
 
   // 拖拽本地文件到画布
@@ -274,13 +215,43 @@ const ReferCanvas = () => {
     }
   }, []);
 
+  // 复制画布的内容
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const copyAction = (e: ClipboardEvent) => {
+        if (ReferRef.current) {
+          if (ReferRef.current.getActiveObject()) {
+            e.preventDefault();
+            ReferRef.current.copyElement(undefined, e);
+          }
+        }
+      };
+
+      const ownerDocument = canvasDom.ownerDocument;
+      ownerDocument.addEventListener('copy', copyAction);
+
+      return () => {
+        ownerDocument.removeEventListener('copy', copyAction);
+      }
+    }
+
+  }, []);
+
   // 粘贴内容到画布
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
       const pasteAction = (e: ClipboardEvent) => {
         e.preventDefault();
-        addFromDataTransfer(e.clipboardData?.items);
+
+        // system clipboard paste
+        const pasteLength = addFromDataTransfer(e.clipboardData?.items); 
+        
+        // Refer clipboard paste
+        if (!pasteLength) {
+          ReferRef.current?.pasteElement();
+        }
       };
 
       const ownerDocument = canvasDom.ownerDocument;
@@ -292,6 +263,51 @@ const ReferCanvas = () => {
     }
 
   }, []);
+
+  // 键盘：全选 Command + A
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+
+      const keydownAction = (e: KeyboardEvent) => {
+        if ((e.code === 'KeyA' || e.key === 'a') && (e.ctrlKey || e.metaKey)) {
+          if (ReferRef.current) {
+            e.preventDefault();
+            ReferRef.current.selectElement();
+          }
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
+  // 键盘：Copy Command + C
+  // useEffect(() => {
+  //   const canvasDom = canvasEl.current;
+  //   if (canvasDom) {
+  //     const ownerDocument = canvasDom.ownerDocument;
+
+  //     const keydownAction = (e: KeyboardEvent) => {
+  //       if ((e.code === 'KeyC' || e.key === 'c') && (e.ctrlKey || e.metaKey)) {
+  //         if (ReferRef.current) {
+  //           e.preventDefault();
+  //           ReferRef.current.copyElement(undefined, e);
+  //         }
+  //       }
+  //     }
+  //     ownerDocument.addEventListener('keydown', keydownAction);
+
+  //     return () => {
+  //       ownerDocument.removeEventListener('keydown', keydownAction);
+  //     }
+  //   }
+  // }, []);
+
 
   return (
     <canvas
