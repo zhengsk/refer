@@ -95,7 +95,7 @@ const ReferCanvas = () => {
     }
   }, []);
 
-  // 键盘：全选
+  // 键盘：全选 Command + A
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
@@ -117,6 +117,50 @@ const ReferCanvas = () => {
     }
   }, []);
 
+  // 键盘：Copy Command + C
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+
+      const keydownAction = (e: KeyboardEvent) => {
+        if ((e.code === 'KeyC' || e.key === 'c') && (e.ctrlKey || e.metaKey)) {
+          if (ReferRef.current) {
+            e.preventDefault();
+            ReferRef.current.copySelectElement();
+          }
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
+  // 键盘：Copy Command + V
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+
+      const keydownAction = (e: KeyboardEvent) => {
+        if ((e.code === 'KeyV' || e.key === 'v') && (e.ctrlKey || e.metaKey)) {
+          if (ReferRef.current) {
+            e.preventDefault();
+            ReferRef.current.pasteElement();
+          }
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);  
+
   // 键盘：删除选中元素
   useEffect(() => {
     const canvasDom = canvasEl.current;
@@ -124,7 +168,7 @@ const ReferCanvas = () => {
       const ownerDocument = canvasDom.ownerDocument;
 
       const keydownAction = (e: KeyboardEvent) => {
-        if (e.code === 'Delete' || e.key === 'Delete') {
+        if (e.code === 'Delete' || e.key === 'Delete' || e.code === 'Backspace' || e.key === 'Backspace') {
           if (ReferRef.current) {
             e.preventDefault();
             ReferRef.current.deleteElement();

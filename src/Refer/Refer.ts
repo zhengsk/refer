@@ -1,5 +1,5 @@
 import { fabric } from 'fabric';
-import { Canvas, Image, Object, Point } from 'fabric/fabric-impl';
+import { ActiveSelection, Canvas, Image, Object, Point } from 'fabric/fabric-impl';
 
 export default class Refer {
   canvas: Canvas;
@@ -7,6 +7,7 @@ export default class Refer {
   dragging: boolean;
 
   preViewStatus: {zoom: number, panPoint: Point} | undefined;
+  clipboard: Object[] = [];
 
   constructor(fabricCanvas: Canvas ) {
     this.canvas = fabricCanvas;
@@ -226,6 +227,64 @@ export default class Refer {
       this.canvas.remove(ele);
     });
     this.canvas.discardActiveObject();
+  }
+
+  // Copy element to clipboard
+  copySelectElement(elements?: Object | Object[]) {
+    if (!elements) {
+      elements = [this.canvas.getActiveObject()];
+    } if (!Array.isArray(elements)) {
+      elements = [elements];
+    }
+
+    this.clipboard = [];
+    elements.forEach(element => element.clone((cloned: Object) => {
+      this.clipboard.push(cloned);
+      console.info(this.clipboard);
+    }));
+
+  }
+
+  // Paste clipboard element
+  pasteElement(elements?: Object | Object[]) {
+    if (!elements) {
+      elements = this.canvas.getObjects();
+    } if (!Array.isArray(elements)) {
+      elements = [elements];
+    }
+
+    this.clipboard.forEach((ele) => {
+      ele.clone((newEle: Object) => {
+        this.canvas.discardActiveObject();
+
+        const zoom = this.canvas.getZoom();
+        newEle.set({
+          left: (newEle.left as number) + 20 / zoom,
+          top: (newEle.top as number) + 20 / zoom,
+          evented: true,
+        });
+
+        if (newEle.type === 'activeSelection') {
+          // active selection needs a reference to the canvas.
+          newEle.canvas = this.canvas;
+          (newEle as ActiveSelection).forEachObject((ele: Object) => {
+            this.canvas.add(ele);
+          });
+          // this should solve the unselectability
+          newEle.setCoords();
+        } else {
+          this.canvas.add(newEle);
+        }
+
+        this.canvas.setActiveObject(newEle);
+        this.canvas.requestRenderAll();
+      });
+    })
+
+    this.clipboard = [];
+    elements.forEach(element => element.clone((cloned: Object) => {
+      this.clipboard.push(cloned);
+    }))
   }
 
   dispose() {
