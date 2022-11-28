@@ -82,8 +82,10 @@ const ReferCanvas = () => {
       const items = DataTransferItemList || [];
       const appendedMap: {[key: string]: boolean} = {}; // Prevent add repeat
 
+      // When has HTML then skip file type
+      const hasHtml = [...items].some(item => item.type.match('^text/html'));
+
       for (let i = 0; i < items.length; i += 1) {
-        debugger;
         const item = items[i];
         if ((item.kind === 'string') && (item.type.match('^text/plain'))) {
           // Add Text node
@@ -113,7 +115,7 @@ const ReferCanvas = () => {
               appendedMap[src] = true;
             }
           });
-        } else if ((item.kind === 'file') && (item.type.match('^image/'))) {
+        } else if (!hasHtml && (item.kind === 'file') && (item.type.match('^image/'))) {
           // Drag items item is an image file
           const file = item.getAsFile();
           if (file && /^image\/*/.test(file.type)) {
@@ -132,13 +134,20 @@ const ReferCanvas = () => {
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-      ownerDocument.addEventListener('paste', (e) => {
+      const pasteAction = (e: ClipboardEvent) => {
         e.preventDefault();
         addFromDataTransfer(e.clipboardData?.items);
-      }) 
+      };
+
+      const ownerDocument = canvasDom.ownerDocument;
+      ownerDocument.addEventListener('paste', pasteAction);
+
+      return () => {
+        ownerDocument.removeEventListener('paste', pasteAction);
+      }
     }
-  })
+
+  }, []);
 
   // 拖拽移动画布
   useEffect(() => {
