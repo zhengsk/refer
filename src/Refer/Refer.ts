@@ -135,11 +135,21 @@ export default class Refer {
     }
   }
 
-  addImgFromURL(src: string, callback?: (img: Image) => void, options?: IImageOptions) {
+  addImgFromURL({ src, callback, imageOptions = {}, inVpCenter = false }: {
+    src: string,
+    callback?: (img: Image) => void,
+    imageOptions?: IImageOptions,
+    inVpCenter?: boolean,
+  }) {
     fabric.Image.fromURL(src, (oImg) => {
+      if (inVpCenter) {
+        const centerPoint = this.canvas.getVpCenter();
+        oImg.left = centerPoint.x - (oImg.width || 0) / 2;
+        oImg.top = centerPoint.y - (oImg.height || 0) / 2;
+      }
       this.canvas.add(oImg);
       callback?.call(this, oImg);
-    }, options);
+    }, imageOptions);
   }
 
   addEventListener(eventName: string, callback: any) {

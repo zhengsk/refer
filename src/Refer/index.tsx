@@ -29,19 +29,14 @@ const ReferCanvas = () => {
     });
     Refer.canvas.add(rect);
 
-
-    // var circle = new fabric.Circle({
-    //   left: 240-10,
-    //   top: 666-10,
-    //   fill: 'yellow',
-    //   radius: 10,
-    // });
-    // Refer.canvas.add(circle);
-
-
-    Refer.addImgFromURL('https://gd-hbimg.huaban.com/c5300f7aff47943aa4fb9d56b8dc764a4c5076aed3245-FaxWud');
-    Refer.addImgFromURL('https://gd-hbimg.huaban.com/54a1785cfc4b7d196884a63fdc510d85ab323fb039ffb-fxWgbl');
-
+    Refer.addImgFromURL({
+      src: 'https://gd-hbimg.huaban.com/13b957418c1f59260285f0ba664fd222b2c78fd581db-ElxX5H_fw1200',
+      inVpCenter: true,
+    });
+    Refer.addImgFromURL({
+      src: 'https://gd-hbimg.huaban.com/54a1785cfc4b7d196884a63fdc510d85ab323fb039ffb-fxWgbl',
+      inVpCenter: true,
+    });
 
     return () => {
       canvas.dispose();
@@ -139,10 +134,12 @@ const ReferCanvas = () => {
     
     if (Refer) {
       // Position to canvas center
+      let inVpCenter = true; // 显示在画布中间
       const offsetPoint = Refer.canvas.getVpCenter();
 
       // Position to event point
       if (event) {
+        inVpCenter = false;
         const pointer = Refer.canvas.getPointer(event);
         offsetPoint.setXY(pointer.x, pointer.y);
       }
@@ -170,12 +167,13 @@ const ReferCanvas = () => {
                 let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
 
                 // TODO: Get Large image src OR srcset
-                Refer.addImgFromURL(img.src, (ele) => {
-                  addedElements.push(ele);
-                }, {
-                  left: offset.x,
-                  top: offset.y,
+                Refer.addImgFromURL({
+                  src: img.src, 
+                  callback: (ele) => { addedElements.push(ele); }, 
+                  imageOptions: { left: offset.x, top: offset.y, },
+                  inVpCenter,
                 });
+
                 appendedMap[img.src] = true;
                 appendLength += 1;
               }
@@ -187,12 +185,13 @@ const ReferCanvas = () => {
           item.getAsString(src => {
             if (!appendedMap[src]) {
               let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
-              Refer.addImgFromURL(src, (ele) => {
-                addedElements.push(ele);
-              }, {
-                left: offset.x,
-                top: offset.y,
+              Refer.addImgFromURL({
+                src,
+                callback: (ele) => { addedElements.push(ele); },
+                imageOptions: { left: offset.x, top: offset.y, },
+                inVpCenter,
               });
+
               appendedMap[src] = true;
               appendLength += 1;
             }
@@ -207,11 +206,11 @@ const ReferCanvas = () => {
             const waitForLoad: Promise<Object> = new Promise((resolve) => {
               let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
               reader.addEventListener('load', function(e) {
-                Refer.addImgFromURL(this.result as string, (ele) => {
-                  resolve(ele);
-                }, {
-                  left: offset.x,
-                  top: offset.y,
+                Refer.addImgFromURL({
+                  src: this.result as string,
+                  callback: (ele) => { resolve(ele); },
+                  imageOptions: { left: offset.x, top: offset.y, },
+                  inVpCenter,
                 });
               });
               appendLength += 1;
