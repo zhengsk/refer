@@ -1,5 +1,5 @@
 import { fabric } from 'fabric';
-import type { IEvent, Point } from 'fabric/fabric-impl';
+import type { IEvent, Point, Object } from 'fabric/fabric-impl';
 import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from './Refer';
 
@@ -13,7 +13,7 @@ const ReferCanvas = () => {
 
 
   useEffect(() => {
-    const options = { };
+    const options = { preserveObjectStacking: true };
     const canvas = new fabric.Canvas(canvasEl.current, options);
     const Refer = new ReferCreator(canvas);
 
@@ -55,7 +55,7 @@ const ReferCanvas = () => {
     if (Refer) {
       Refer.addEventListener('mouse:wheel', (e: IEvent) => {
         const event = e.e as WheelEvent;
-        const zoom = Refer.canvas.getZoom();
+        const zoom = Refer.getZoom();
         const newZoom = Math.min(100, Math.max(0.01, zoom * (event.deltaY > 0 ? 0.9 : 1.1)));
         Refer.zoomToPoint(e.pointer as Point, newZoom);
       });
@@ -132,13 +132,25 @@ const ReferCanvas = () => {
   }, []);
 
   // 拖拽或粘贴对象（dataTransfer）到画布
-  const addFromDataTransfer = useCallback((DataTransferItemList: DataTransferItemList | undefined) => {
-    const Refer = ReferRef.current;
-    let addLength = 0;
+  const addFromDataTransfer = useCallback((DataTransferItemList: DataTransferItemList | undefined, event?: DragEvent) => {
 
+    const Refer = ReferRef.current;
+    const addedElements: Array<Object | Promise<Object>> = [];
+    
     if (Refer) {
+      // Position to canvas center
+      const offsetPoint = Refer.canvas.getVpCenter();
+
+      // Position to event point
+      if (event) {
+        const pointer = Refer.canvas.getPointer(event);
+        offsetPoint.setXY(pointer.x, pointer.y);
+      }
+
       const items = DataTransferItemList || [];
       const appendedMap: {[key: string]: boolean} = {}; // Prevent add repeat
+      let appendLength = 0;
+      const zoom = Refer.getZoom();
 
       // When has HTML then skip file type
       const hasHtml = [...items].some(item => item.type.match('^text/html'));
@@ -155,10 +167,17 @@ const ReferCanvas = () => {
             const imgs = div.querySelectorAll('img');
             imgs.forEach(img => {
               if (!appendedMap[img.src]) {
+                let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
+
                 // TODO: Get Large image src OR srcset
-                Refer.addImgFromURL(img.src);
+                Refer.addImgFromURL(img.src, (ele) => {
+                  addedElements.push(ele);
+                }, {
+                  left: offset.x,
+                  top: offset.y,
+                });
                 appendedMap[img.src] = true;
-                addLength += 1;
+                appendLength += 1;
               }
             });
           });
@@ -167,31 +186,44 @@ const ReferCanvas = () => {
           // url
           item.getAsString(src => {
             if (!appendedMap[src]) {
-              console.count('uri-list');
-              Refer.addImgFromURL(src);
+              let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
+              Refer.addImgFromURL(src, (ele) => {
+                addedElements.push(ele);
+              }, {
+                left: offset.x,
+                top: offset.y,
+              });
               appendedMap[src] = true;
+              appendLength += 1;
             }
           });
-
-          addLength += 1;
         } else if (!hasHtml && (item.kind === 'file') && (item.type.match('^image/'))) {
           // Drag items item is an image file
           const file = item.getAsFile();
           if (file && /^image\/*/.test(file.type)) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
-            console.count('file');
-            reader.addEventListener('load', function(e) {
-              Refer.addImgFromURL(this.result as string);
+
+            const waitForLoad: Promise<Object> = new Promise((resolve) => {
+              let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
+              reader.addEventListener('load', function(e) {
+                Refer.addImgFromURL(this.result as string, (ele) => {
+                  resolve(ele);
+                }, {
+                  left: offset.x,
+                  top: offset.y,
+                });
+              });
+              appendLength += 1;
             });
 
-            addLength += 1;
+            addedElements.push(waitForLoad);
           }
         }
       }
 
     }
-    return addLength;
+    return addedElements;
   }, []);
 
   // 拖拽本地文件到画布
@@ -199,12 +231,15 @@ const ReferCanvas = () => {
     const Refer = ReferRef.current;
 
     if (Refer) {
-      const dropAction = (e: IEvent) => {
-        const originEvent = e.e as DragEvent;
+      const dropAction = (event: IEvent) => {
+        const originEvent = event.e as DragEvent;
         originEvent.preventDefault();
   
         const items = originEvent.dataTransfer?.items;
-        addFromDataTransfer(items);
+        const addedElements = addFromDataTransfer(items, originEvent);
+        Promise.all(addedElements).then(elements => {
+          Refer.selectElement(elements);
+        })
       }
 
       Refer.addEventListener('drop', dropAction);
@@ -246,10 +281,10 @@ const ReferCanvas = () => {
         e.preventDefault();
 
         // system clipboard paste
-        const pasteLength = addFromDataTransfer(e.clipboardData?.items); 
+        const pastedElements = addFromDataTransfer(e.clipboardData?.items); 
         
         // Refer clipboard paste
-        if (!pasteLength) {
+        if (!pastedElements.length) {
           ReferRef.current?.pasteElement();
         }
       };
@@ -283,6 +318,19 @@ const ReferCanvas = () => {
       return () => {
         ownerDocument.removeEventListener('keydown', keydownAction);
       }
+    }
+  }, []);
+
+  // 选中元素直接移到最前面
+  useEffect(() => {
+    const Ref = ReferRef.current;
+    if (Ref) {
+      const bringToFront = () => {
+        const ele = Ref.getActiveObject();
+        Ref.bringToFront(ele);
+      }
+      Ref.addEventListener('selection:created', bringToFront);
+      Ref.addEventListener('selection:updated', bringToFront);
     }
   }, []);
 

@@ -1,5 +1,5 @@
 import { fabric } from 'fabric';
-import { ActiveSelection, Canvas, Image, Object, Point } from 'fabric/fabric-impl';
+import type { ActiveSelection, Canvas, IImageOptions, Image, Object, Point } from 'fabric/fabric-impl';
 
 export default class Refer {
   canvas: Canvas;
@@ -51,6 +51,10 @@ export default class Refer {
 
   addImg() {
 
+  }
+
+  getZoom() {
+    return this.canvas.getZoom();
   }
 
   // Get canvas view status：zoom and absolute pan value
@@ -131,11 +135,11 @@ export default class Refer {
     }
   }
 
-  addImgFromURL(src: string, callback?: (img: Image) => {}) {
+  addImgFromURL(src: string, callback?: (img: Image) => void, options?: IImageOptions) {
     fabric.Image.fromURL(src, (oImg) => {
       this.canvas.add(oImg);
       callback?.call(this, oImg);
-    });
+    }, options);
   }
 
   addEventListener(eventName: string, callback: any) {
@@ -254,19 +258,20 @@ export default class Refer {
   // Paste clipboard element
   pasteElement(elements?: Object | Object[]) {
     if (!elements) {
-      elements = this.canvas.getActiveObjects();
-    } if (!Array.isArray(elements)) {
+      elements = this.clipboard;
+    } else if (!Array.isArray(elements)) {
       elements = [elements];
     }
 
     this.clipboard.forEach((ele) => {
-      ele.clone((newEle: Object) => {
-        this.canvas.discardActiveObject();
+      this.canvas.discardActiveObject();
+      const zoom = this.canvas.getZoom();
+      const offset = 20 / zoom;
 
-        const zoom = this.canvas.getZoom();
+      ele.clone((newEle: Object) => {
         newEle.set({
-          left: (newEle.left as number) + 20 / zoom,
-          top: (newEle.top as number) + 20 / zoom,
+          left: (newEle.left as number) + offset,
+          top: (newEle.top as number) + offset,
           evented: true,
         });
 
@@ -285,12 +290,23 @@ export default class Refer {
         this.canvas.setActiveObject(newEle);
         this.canvas.requestRenderAll();
       });
+
+      ele.left = (ele.left || 0) + offset;
+      ele.top = (ele.top || 0) + offset;
     })
 
     this.clipboard = [];
     elements.forEach(element => element.clone((cloned: Object) => {
       this.clipboard.push(cloned);
     }))
+  }
+
+  // Bring to front
+  bringToFront(element?: Object) {
+    if (!element) {
+      element = this.canvas.getActiveObject();
+    }
+    this.canvas.bringToFront(element);
   }
 
   dispose() {
