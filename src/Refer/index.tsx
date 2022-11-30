@@ -130,7 +130,8 @@ const ReferCanvas = () => {
   const addFromDataTransfer = useCallback((DataTransferItemList: DataTransferItemList | undefined, event?: DragEvent) => {
 
     const Refer = ReferRef.current;
-    const addedElements: Array<Object | Promise<Object>> = [];
+    const addedElements: (Promise<Object | undefined> | Promise<(Object | undefined)[]>)[] = [];
+    
     
     if (Refer) {
       // Position to canvas center
@@ -156,46 +157,57 @@ const ReferCanvas = () => {
         const item = items[i];
         if ((item.kind === 'string') && (item.type.match('^text/plain'))) {
           // Add Text node
-        } else if ((item.kind === 'string') && (item.type.match('^text/html'))) {
-          // Get image from html
-          item.getAsString(html => {
-            const div = document.createElement('div');
-            div.innerHTML = html;
-            const imgs = div.querySelectorAll('img');
-            imgs.forEach(img => {
-              if (!appendedMap[img.src]) {
-                let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
 
-                // TODO: Get Large image src OR srcset
+        } else if ((item.kind === 'string') && (item.type.match('^text/html'))) {
+          const htmlPromise = new Promise<Array<Object | undefined>>((resolve) => {
+            // Get image from html
+            item.getAsString(html => {
+              const div = document.createElement('div');
+              div.innerHTML = html;
+              const imgs = div.querySelectorAll('img');
+
+              const imgsPromise  = [...imgs].map(img => {
+                if (!appendedMap[img.src]) {
+                  let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
+                  
+                  appendedMap[img.src] = true;
+                  appendLength += 1;
+
+                  // TODO: Get Large image src OR srcset
+                  return new Promise<Object>(resolve => {
+                    Refer.addImgFromURL({
+                      src: img.src, 
+                      callback: (ele) => { resolve(ele); }, 
+                      imageOptions: { left: offset.x, top: offset.y, },
+                      inVpCenter,
+                    });
+                  });
+                }
+              });
+
+              resolve(Promise.all(imgsPromise));
+            });
+          });
+          addedElements.push(htmlPromise);
+        } else if ((item.kind === 'string') && (item.type.match('^text/uri-list'))) {
+          const newElePromise = new Promise<Object | undefined>((resolve) => {
+            // url
+            item.getAsString(src => {
+              if (!appendedMap[src]) {
+                let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
                 Refer.addImgFromURL({
-                  src: img.src, 
-                  callback: (ele) => { addedElements.push(ele); }, 
+                  src,
+                  callback: (ele) => { resolve(ele); },
                   imageOptions: { left: offset.x, top: offset.y, },
                   inVpCenter,
                 });
-
-                appendedMap[img.src] = true;
+  
+                appendedMap[src] = true;
                 appendLength += 1;
               }
             });
           });
-  
-        } else if ((item.kind === 'string') && (item.type.match('^text/uri-list'))) {
-          // url
-          item.getAsString(src => {
-            if (!appendedMap[src]) {
-              let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
-              Refer.addImgFromURL({
-                src,
-                callback: (ele) => { addedElements.push(ele); },
-                imageOptions: { left: offset.x, top: offset.y, },
-                inVpCenter,
-              });
-
-              appendedMap[src] = true;
-              appendLength += 1;
-            }
-          });
+          addedElements.push(newElePromise);
         } else if (!hasHtml && (item.kind === 'file') && (item.type.match('^image/'))) {
           // Drag items item is an image file
           const file = item.getAsFile();
@@ -213,16 +225,26 @@ const ReferCanvas = () => {
                   inVpCenter,
                 });
               });
-              appendLength += 1;
             });
-
+            
+            appendLength += 1;
             addedElements.push(waitForLoad);
           }
         }
       }
-
     }
-    return addedElements;
+
+    return Promise.all(addedElements).then(elements => {
+      return elements.reduce((acc: Object[], item) => {
+        if (Array.isArray(item)) {
+          const newEles: Object[] = item.filter(ele => ele) as Object[];
+          Array.prototype.push.apply(acc, newEles);
+        } else if (item !== undefined) {
+          acc.push(item);
+        }
+        return acc;
+      }, []);
+    });
   }, []);
 
   // 拖拽本地文件到画布
@@ -235,10 +257,10 @@ const ReferCanvas = () => {
         originEvent.preventDefault();
   
         const items = originEvent.dataTransfer?.items;
-        const addedElements = addFromDataTransfer(items, originEvent);
-        Promise.all(addedElements).then(elements => {
-          Refer.selectElement(elements);
-        })
+        addFromDataTransfer(items, originEvent)
+          .then((eles) => {
+            Refer.selectElement(eles);
+          });
       }
 
       Refer.addEventListener('drop', dropAction);
@@ -279,13 +301,15 @@ const ReferCanvas = () => {
       const pasteAction = (e: ClipboardEvent) => {
         e.preventDefault();
 
-        // system clipboard paste
-        const pastedElements = addFromDataTransfer(e.clipboardData?.items); 
-        
-        // Refer clipboard paste
-        if (!pastedElements.length) {
-          ReferRef.current?.pasteElement();
-        }
+        // 粘贴系统剪贴板内容
+        addFromDataTransfer(e.clipboardData?.items).then(eles => {
+          if (eles.length) {
+            ReferRef.current?.selectElement(eles);
+          } else {
+            // 系统剪贴板没粘贴内容，则粘贴画布剪贴板内容
+            ReferRef.current?.pasteElement();
+          }
+        }); 
       };
 
       const ownerDocument = canvasDom.ownerDocument;
