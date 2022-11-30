@@ -6,7 +6,7 @@ export default class Refer {
   dragMode: boolean;
   dragging: boolean;
 
-  preViewStatus: {zoom: number, panPoint: Point} | undefined;
+  preViewStatus: {zoom: number, panPoint: Point, element: Object} | undefined;
   clipboard: Object[] = [];
 
   constructor(fabricCanvas: Canvas ) {
@@ -58,7 +58,7 @@ export default class Refer {
   }
 
   // Get canvas view status：zoom and absolute pan value
-  setPreViewStatus() {
+  setPreViewStatus(element: Object) {
     const { canvas } = this;
     const zoom = canvas.getZoom();
     const vpCenter = canvas.getVpCenter();
@@ -72,6 +72,7 @@ export default class Refer {
     this.preViewStatus = {
       zoom,
       panPoint,
+      element,
     }
   }
 
@@ -87,13 +88,25 @@ export default class Refer {
   }
 
   // Fit element to viewport
-  fitViewElement(element?: Object, callback?: () => {}) {
+  fitViewElement({
+    element,
+    callback,
+    saveState = true,
+  }: {
+    element?: Object,
+    callback?: () => {},
+    saveState?: boolean,
+  } = {}) {
     const { canvas } = this;
     canvas.renderAll();
     const ele: Object = element || canvas.getActiveObject();
     
     if (ele) {
-      this.setPreViewStatus(); // Save status
+      if (saveState) {
+        this.setPreViewStatus(ele); // Save status
+      } else if (this.preViewStatus) { // Just save element
+        this.preViewStatus.element = ele;
+      }
 
       const offset = 20;
       const zoom = canvas.getZoom();

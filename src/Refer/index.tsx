@@ -112,15 +112,31 @@ const ReferCanvas = () => {
     }
   }, []);
 
+  // 元素自适应窗口展示切换
+  const switchFitViewElement = useCallback((element?: Object) => {
+    const Refer = ReferRef.current;
+    if (Refer) {
+      if (!element) {
+        element = Refer.getActiveObject();
+      }
+      const preViewStatus = Refer.preViewStatus;
+      if (!preViewStatus) {
+        Refer.fitViewElement();
+      } else if(preViewStatus.element !== element) {
+        Refer.fitViewElement({ saveState: false });
+      } else {
+        Refer.restorePreViewStatus();
+      }
+    }
+  }, []);
+
   // 双击自适应窗口
   useEffect(() => {
     const Refer = ReferRef.current;
     if (Refer) {
       Refer.addEventListener('mouse:dblclick', (e: IEvent) => {
-        if (!Refer.preViewStatus) {
-          Refer.fitViewElement();
-        } else {
-          Refer.restorePreViewStatus();
+        if (e.target) {
+          switchFitViewElement(e.target);
         }
       });
     }
@@ -334,6 +350,25 @@ const ReferCanvas = () => {
             e.preventDefault();
             ReferRef.current.selectElement();
           }
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
+  // 键盘：元素自适应窗口展示切换 F 
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+
+      const keydownAction = (e: KeyboardEvent) => {
+        if ((e.code === 'KeyF' || e.key === 'F') && (!e.ctrlKey && !e.metaKey)) {
+          switchFitViewElement();
         }
       }
       ownerDocument.addEventListener('keydown', keydownAction);
