@@ -64,7 +64,7 @@ const ReferCanvas = () => {
       const ownerDocument = canvasDom.ownerDocument;
 
       const keydownAction = (e: KeyboardEvent) => {
-        if (e.code === 'Space' || e.key === ' ') {
+        if (e.key === ' ') {
           if (ReferRef.current && !ReferRef.current.dragMode) {
             e.preventDefault();
             ReferRef.current.setDragMode(true);
@@ -73,7 +73,7 @@ const ReferCanvas = () => {
       }
 
       const keyupAction = (e: KeyboardEvent) => {
-        if (e.code === 'Space' || e.key === ' ') {
+        if (e.key === ' ') {
           if (ReferRef.current) {
             ReferRef.current.setDragMode(false);
           }
@@ -97,7 +97,7 @@ const ReferCanvas = () => {
       const ownerDocument = canvasDom.ownerDocument;
 
       const keydownAction = (e: KeyboardEvent) => {
-        if (e.code === 'Delete' || e.key === 'Delete' || e.code === 'Backspace' || e.key === 'Backspace') {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
           if (ReferRef.current) {
             e.preventDefault();
             ReferRef.current.deleteElement();
@@ -121,9 +121,9 @@ const ReferCanvas = () => {
       }
       const preViewStatus = Refer.preViewStatus;
       if (!preViewStatus) {
-        Refer.fitViewElement();
+        Refer.fitViewElement({ element });
       } else if(preViewStatus.element !== element) {
-        Refer.fitViewElement({ saveState: false });
+        Refer.fitViewElement({ element, saveState: false });
       } else {
         Refer.restorePreViewStatus();
       }
@@ -345,7 +345,7 @@ const ReferCanvas = () => {
       const ownerDocument = canvasDom.ownerDocument;
 
       const keydownAction = (e: KeyboardEvent) => {
-        if ((e.code === 'KeyA' || e.key === 'a') && (e.ctrlKey || e.metaKey)) {
+        if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
           if (ReferRef.current) {
             e.preventDefault();
             ReferRef.current.selectElement();
@@ -367,8 +367,46 @@ const ReferCanvas = () => {
       const ownerDocument = canvasDom.ownerDocument;
 
       const keydownAction = (e: KeyboardEvent) => {
-        if ((e.code === 'KeyF' || e.key === 'F') && (!e.ctrlKey && !e.metaKey)) {
+        if (e.key === 'f' && (!e.ctrlKey && !e.metaKey)) {
           switchFitViewElement();
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
+  // 键盘：下一个元素自适应 G
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+
+      const keydownAction = (e: KeyboardEvent) => {
+        if (
+          (
+            e.key === 'g'||
+            e.key === 'G'||
+            e.key === 'ArrowLeft'||
+            e.key === 'ArrowRight'
+          ) && (!e.ctrlKey && !e.metaKey)
+        ) {
+          const Refer = ReferRef.current;
+          if (Refer) {
+            let currentElement = Refer.preViewStatus?.element || Refer.canvas.getActiveObject();
+            const allElements = Refer.canvas.getObjects();
+            let index = allElements.indexOf(currentElement);
+            index += (e.key === 'G' || e.key === 'ArrowLeft') ? -1 : 1;
+            if (index > allElements.length - 1) { index = 0 }
+            if (index < 0) { index = allElements.length }
+            
+            const targetEle = allElements[index];
+            console.info(index, targetEle);
+            switchFitViewElement(targetEle);
+          }
         }
       }
       ownerDocument.addEventListener('keydown', keydownAction);
@@ -399,7 +437,7 @@ const ReferCanvas = () => {
   //     const ownerDocument = canvasDom.ownerDocument;
 
   //     const keydownAction = (e: KeyboardEvent) => {
-  //       if ((e.code === 'KeyC' || e.key === 'c') && (e.ctrlKey || e.metaKey)) {
+  //       if (e.key === 'c' && (e.ctrlKey || e.metaKey)) {
   //         if (ReferRef.current) {
   //           e.preventDefault();
   //           ReferRef.current.copyElement(undefined, e);
