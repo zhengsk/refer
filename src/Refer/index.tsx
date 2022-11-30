@@ -379,6 +379,19 @@ const ReferCanvas = () => {
   //   }
   // }, []);
 
+  // 画布大小变化
+  useEffect(() => {
+    const Ref = ReferRef.current;
+    if (Ref) {
+      window.addEventListener('resize', function (){
+        const canvas = Ref.canvas;
+        canvas.setWidth(document.documentElement.clientWidth);
+        canvas.setHeight(document.documentElement.clientHeight);
+        canvas.requestRenderAll();
+        canvas.calcOffset();
+      }, {passive: true});
+    }
+  }, []);
 
   return (
     <canvas
