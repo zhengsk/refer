@@ -1,5 +1,5 @@
 import { fabric } from 'fabric';
-import type { IEvent, Point, Object } from 'fabric/fabric-impl';
+import type { IEvent, Point, Object, ActiveSelection } from 'fabric/fabric-impl';
 import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from './Refer';
 
@@ -338,7 +338,7 @@ const ReferCanvas = () => {
 
   }, []);
 
-  // 键盘：全选 Command + A
+  // 键盘 Command + A：全选
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
@@ -360,7 +360,7 @@ const ReferCanvas = () => {
     }
   }, []);
 
-  // 键盘：元素自适应窗口展示切换 F 
+  // 键盘 F：元素自适应窗口展示切换  
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
@@ -379,7 +379,7 @@ const ReferCanvas = () => {
     }
   }, []);
 
-  // 键盘：下一个元素自适应 G
+  // 键盘 G：下一个元素自适应 
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
@@ -406,6 +406,66 @@ const ReferCanvas = () => {
             const targetEle = allElements[index];
             console.info(index, targetEle);
             switchFitViewElement(targetEle);
+          }
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
+  // 键盘 0：缩放显示1:1 
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+      const keydownAction = (e: KeyboardEvent) => {
+        if (e.key === '0') {
+          e.preventDefault();
+          const Refer = ReferRef.current;
+          if (Refer) {
+            const centerPoint = Refer.canvas.getCenter();
+            let point = new fabric.Point(centerPoint.left, centerPoint.top);
+
+            const activeEle = Refer.getActiveObject();
+            if (activeEle) {
+              Refer.fitViewElement({ element: activeEle, saveState: false });
+            } else {
+              Refer.zoomToPoint(point, 1);
+            }
+          }
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
+  // 键盘 1：所有内容自适应到视窗
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+      const keydownAction = (e: KeyboardEvent) => {
+        if (e.key === '1') {
+          e.preventDefault();
+          const Refer = ReferRef.current;
+          if (Refer) {
+            const activeEle = Refer.getActiveObject();
+            Refer.canvas.discardActiveObject();
+
+            const ele = Refer.selectElement();
+            Refer.fitViewElement({ element: ele, saveState: false });
+            Refer.canvas.discardActiveObject();
+
+            const eles = activeEle.isType('activeSelection') ? (activeEle as ActiveSelection).getObjects() : activeEle;
+            Refer.selectElement(eles);
           }
         }
       }

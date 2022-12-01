@@ -57,6 +57,12 @@ export default class Refer {
     return this.canvas.getZoom();
   }
 
+  setZoom(zoom = 1) {
+    return this.canvas.setZoom(zoom);
+  }
+
+
+
   // Get canvas view status：zoom and absolute pan value
   setPreViewStatus(element: Object) {
     const { canvas } = this;
@@ -173,8 +179,8 @@ export default class Refer {
     this.canvas.off(eventName, callback);
   }
 
-  zoomToPoint(point: Point, value: number) {
-    this.canvas.zoomToPoint(point, value);
+  zoomToPoint(point: Point, zoom: number) {
+    this.canvas.zoomToPoint(point, zoom);
     return this;
   }
 
@@ -234,7 +240,9 @@ export default class Refer {
   }
 
   // Select element
-  selectElement(elements?: Object | Object[]) {
+  selectElement(elements?: Object | Object[]): Object {
+    this.canvas.discardActiveObject();
+
     if (!elements) {
       elements = this.canvas.getObjects();
     } if (!Array.isArray(elements)) {
@@ -244,6 +252,7 @@ export default class Refer {
     const selection = new fabric.ActiveSelection(elements, { canvas: this.canvas });
     this.canvas.setActiveObject(selection);
     this.canvas.requestRenderAll();
+    return selection;
   }
 
   // Delete element
