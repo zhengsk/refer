@@ -37,6 +37,10 @@ const ReferCanvas = () => {
       src: 'https://gd-hbimg.huaban.com/54a1785cfc4b7d196884a63fdc510d85ab323fb039ffb-fxWgbl',
       inVpCenter: true,
     });
+    Refer.addImgFromURL({
+      src: 'https://gd-hbimg.huaban.com/371979b412e17c0e300afcc5eb5973313e2a621b241b4-J3QAQx',
+      inVpCenter: true,
+    });
 
     return () => {
       canvas.dispose();
