@@ -54,8 +54,11 @@ const ReferCanvas = () => {
     if (Refer) {
       Refer.addEventListener('mouse:wheel', (e: IEvent) => {
         const event = e.e as WheelEvent;
+        event.preventDefault();
         const zoom = Refer.getZoom();
-        const newZoom = Math.min(100, Math.max(0.01, zoom * (event.deltaY > 0 ? 0.9 : 1.1)));
+        let ratio = event.deltaY * 0.0015;
+        if (event.shiftKey || event.metaKey || event.ctrlKey) { ratio *= 10; }
+        const newZoom = Math.min(100, Math.max(0.01, zoom * (1 - ratio)));
         Refer.zoomToPoint(e.pointer as Point, newZoom);
       });
     }
