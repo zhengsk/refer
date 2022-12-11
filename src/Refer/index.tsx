@@ -21,11 +21,11 @@ const ReferCanvas = () => {
     (window as any).Refer = Refer;
 
     var rect = new fabric.Rect({
-      left: -10,
-      top: -10,
+      left: -100,
+      top: -100,
       fill: 'red',
-      width: 20,
-      height: 20,
+      width: 200,
+      height: 200,
     });
     Refer.canvas.add(rect);
 
