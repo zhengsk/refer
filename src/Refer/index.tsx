@@ -3,12 +3,15 @@ import type { IEvent, Point, Object, ActiveSelection } from 'fabric/fabric-impl'
 import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from './Refer';
 
+import styles from './index.module.less';
+
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
 
 const ReferCanvas = () => {
   const ReferRef = useRef<ReferCreator>();
   const canvasEl = useRef<HTMLCanvasElement|null>(null);
+  const [zoom, setZoom]  = useState(1);
   // const {isFitviewMode, setIsFitViewMode} = useState(false);
 
 
@@ -270,6 +273,32 @@ const ReferCanvas = () => {
     });
   }, []);
 
+  // 页面元素适配可视区域
+  const allElementFitView = useCallback(() => {
+    const Refer = ReferRef.current;
+    if (Refer) {
+      const activeEle = Refer.getActiveObject();
+      Refer.canvas.discardActiveObject();
+
+      const ele = Refer.selectElement();
+      Refer.fitViewElement({ element: ele, saveState: false });
+      Refer.canvas.discardActiveObject();
+
+      const eles = activeEle.isType('activeSelection') ? (activeEle as ActiveSelection).getObjects() : activeEle;
+      Refer.selectElement(eles);
+    }
+  }, []);
+
+  // 画布100%展示，以中心区域缩放
+  const zoomCenterTo100 = useCallback(() => {
+    const Refer = ReferRef.current;
+      if (Refer) {
+        const centerPoint = Refer.canvas.getCenter();
+        let point = new fabric.Point(centerPoint.left, centerPoint.top);
+        Refer.zoomToPoint(point, 1);
+      }
+  }, []);
+
   // 拖拽本地文件到画布
   useEffect(() => {
     const Refer = ReferRef.current;
@@ -432,18 +461,7 @@ const ReferCanvas = () => {
       const keydownAction = (e: KeyboardEvent) => {
         if (e.key === '0') {
           e.preventDefault();
-          const Refer = ReferRef.current;
-          if (Refer) {
-            const centerPoint = Refer.canvas.getCenter();
-            let point = new fabric.Point(centerPoint.left, centerPoint.top);
-
-            const activeEle = Refer.getActiveObject();
-            if (activeEle) {
-              Refer.fitViewElement({ element: activeEle, saveState: false });
-            } else {
-              Refer.zoomToPoint(point, 1);
-            }
-          }
+          zoomCenterTo100();
         }
       }
       ownerDocument.addEventListener('keydown', keydownAction);
@@ -462,18 +480,7 @@ const ReferCanvas = () => {
       const keydownAction = (e: KeyboardEvent) => {
         if (e.key === '1') {
           e.preventDefault();
-          const Refer = ReferRef.current;
-          if (Refer) {
-            const activeEle = Refer.getActiveObject();
-            Refer.canvas.discardActiveObject();
-
-            const ele = Refer.selectElement();
-            Refer.fitViewElement({ element: ele, saveState: false });
-            Refer.canvas.discardActiveObject();
-
-            const eles = activeEle.isType('activeSelection') ? (activeEle as ActiveSelection).getObjects() : activeEle;
-            Refer.selectElement(eles);
-          }
+          allElementFitView();
         }
       }
       ownerDocument.addEventListener('keydown', keydownAction);
@@ -533,12 +540,50 @@ const ReferCanvas = () => {
     }
   }, []);
 
+  // 画布缩放设置 zoom
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const Refer = ReferRef.current;
+      if (Refer) {
+        const action = (e:any) => {
+          const zoom = Refer.getZoom();
+          setZoom(zoom);
+        };
+
+        Refer.addEventListener('after:render', action);
+
+        return () => {
+          Refer.removeEventListener('after:render', action);
+        }
+      }
+    }
+  }, []);
+
+  // 切换100%展示和内容自适应窗口
+  const zoomToggle = useCallback(() => {
+    const Refer = ReferRef.current;
+    if (Refer) {
+      const zoom = Refer.getZoom();
+      if (zoom !== 1) {
+        zoomCenterTo100();
+      } else {
+        allElementFitView();
+      }
+    }
+  }, []);
+
   return (
-    <canvas
-      width={vw}
-      height={vh}
-      ref={canvasEl}
-    />
+    <div>
+      <canvas
+        width={vw}
+        height={vh}
+        ref={canvasEl}
+      />
+      <div className={styles.zoom} onClick={zoomToggle}>
+        {`${Math.floor(zoom * 100)}%`}
+      </div>
+    </div>
   )
 };
 
