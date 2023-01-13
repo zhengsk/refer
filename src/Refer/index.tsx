@@ -290,12 +290,16 @@ const ReferCanvas = () => {
   }, []);
 
   // 画布100%展示，以中心区域缩放
-  const zoomCenterTo100 = useCallback(() => {
+  const zoomCenterTo = useCallback((value = 1, relative = false) => {
     const Refer = ReferRef.current;
       if (Refer) {
         const centerPoint = Refer.canvas.getCenter();
         let point = new fabric.Point(centerPoint.left, centerPoint.top);
-        Refer.zoomToPoint(point, 1);
+        if (relative) {
+          value = Refer.getZoom() * value;
+        }
+        const zoom = Math.min(100, Math.max(0.01, value));
+        Refer.zoomToPoint(point, zoom);
       }
   }, []);
 
@@ -461,7 +465,7 @@ const ReferCanvas = () => {
       const keydownAction = (e: KeyboardEvent) => {
         if (e.key === '0') {
           e.preventDefault();
-          zoomCenterTo100();
+          zoomCenterTo();
         }
       }
       ownerDocument.addEventListener('keydown', keydownAction);
@@ -481,6 +485,28 @@ const ReferCanvas = () => {
         if (e.key === '1') {
           e.preventDefault();
           allElementFitView();
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
+  // 键盘 -、 + ：缩放画布
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+      const keydownAction = (e: KeyboardEvent) => {
+        if (e.key === '-') {
+          e.preventDefault();
+          zoomCenterTo(2 / 3, true);
+        } else if (e.key === '=') {
+          e.preventDefault();
+          zoomCenterTo(3 / 2, true);
         }
       }
       ownerDocument.addEventListener('keydown', keydownAction);
@@ -566,7 +592,7 @@ const ReferCanvas = () => {
     if (Refer) {
       const zoom = Refer.getZoom();
       if (zoom !== 1) {
-        zoomCenterTo100();
+        zoomCenterTo();
       } else {
         allElementFitView();
       }
@@ -580,6 +606,20 @@ const ReferCanvas = () => {
         height={vh}
         ref={canvasEl}
       />
+      {/* Logo */}
+      <div className={styles.logo}>
+        <a href='https://huaban.com'>
+          <img
+            src='https://st0.dancf.com/static/02/202201151128-a455.svg'
+            title='花瓣网'
+            width={24}
+            height={24}
+          />
+        </a>
+        <span className={styles.siteName}>花瓣参考</span>
+      </div>
+
+      {/* zoom */}
       <div className={styles.zoom} onClick={zoomToggle}>
         {`${Math.floor(zoom * 100)}%`}
       </div>
