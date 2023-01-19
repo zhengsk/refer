@@ -1,5 +1,13 @@
 import { fabric } from 'fabric';
+import 'fabric-history'; // history https://www.npmjs.com/package/fabric-history
 import type { ActiveSelection, Canvas, IImageOptions, Image, Object, Point } from 'fabric/fabric-impl';
+
+declare module 'fabric/fabric-impl' {
+  export interface Canvas {
+    undo(): void;
+    redo(): void;
+  }
+}
 
 export default class Refer {
   canvas: Canvas;
@@ -344,5 +352,15 @@ export default class Refer {
   dispose() {
     // TODO: destory canvas
     console.info('dispose');
+  }
+
+  // history undo
+  undo() {
+    this.canvas?.undo();
+  }
+
+  // history redo
+  redo() {
+    this.canvas?.redo();
   }
 }

@@ -517,6 +517,25 @@ const ReferCanvas = () => {
     }
   }, []);
 
+   // 键盘 Ctrl + z、 Ctrl + shift + z ：历史记录操作
+   useEffect(() => {
+    const canvasDom = canvasEl.current;
+    const Refer = ReferRef.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+      const keydownAction = (e: KeyboardEvent) => {
+        if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+          e.shiftKey ? Refer?.redo() : Refer?.undo();
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
   // 选中元素直接移到最前面
   useEffect(() => {
     const Ref = ReferRef.current;
