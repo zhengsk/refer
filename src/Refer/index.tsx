@@ -10,8 +10,8 @@ const vh = document.documentElement.clientHeight;
 
 const ReferCanvas = () => {
   const ReferRef = useRef<ReferCreator>();
-  const canvasEl = useRef<HTMLCanvasElement|null>(null);
-  const [zoom, setZoom]  = useState(1);
+  const canvasEl = useRef<HTMLCanvasElement | null>(null);
+  const [zoom, setZoom] = useState(1);
   // const {isFitviewMode, setIsFitViewMode} = useState(false);
 
 
@@ -132,7 +132,7 @@ const ReferCanvas = () => {
       const preViewStatus = Refer.preViewStatus;
       if (!preViewStatus) {
         Refer.fitViewElement({ element });
-      } else if(preViewStatus.element !== element) {
+      } else if (preViewStatus.element !== element) {
         Refer.fitViewElement({ element, saveState: false });
       } else {
         Refer.restorePreViewStatus();
@@ -157,8 +157,8 @@ const ReferCanvas = () => {
 
     const Refer = ReferRef.current;
     const addedElements: (Promise<Object | undefined> | Promise<(Object | undefined)[]>)[] = [];
-    
-    
+
+
     if (Refer) {
       // Position to canvas center
       let inVpCenter = true; // 显示在画布中间
@@ -172,7 +172,7 @@ const ReferCanvas = () => {
       }
 
       const items = DataTransferItemList || [];
-      const appendedMap: {[key: string]: boolean} = {}; // Prevent add repeat
+      const appendedMap: { [key: string]: boolean } = {}; // Prevent add repeat
       let appendLength = 0;
       const zoom = Refer.getZoom();
 
@@ -192,18 +192,18 @@ const ReferCanvas = () => {
               div.innerHTML = html;
               const imgs = div.querySelectorAll('img');
 
-              const imgsPromise  = [...imgs].map(img => {
+              const imgsPromise = [...imgs].map(img => {
                 if (!appendedMap[img.src]) {
                   let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
-                  
+
                   appendedMap[img.src] = true;
                   appendLength += 1;
 
                   // TODO: Get Large image src OR srcset
                   return new Promise<Object>(resolve => {
                     Refer.addImgFromURL({
-                      src: img.src, 
-                      callback: (ele) => { resolve(ele); }, 
+                      src: img.src,
+                      callback: (ele) => { resolve(ele); },
                       imageOptions: { left: offset.x, top: offset.y, },
                       inVpCenter,
                     });
@@ -227,7 +227,7 @@ const ReferCanvas = () => {
                   imageOptions: { left: offset.x, top: offset.y, },
                   inVpCenter,
                 });
-  
+
                 appendedMap[src] = true;
                 appendLength += 1;
               }
@@ -243,7 +243,7 @@ const ReferCanvas = () => {
 
             const waitForLoad: Promise<Object> = new Promise((resolve) => {
               let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
-              reader.addEventListener('load', function(e) {
+              reader.addEventListener('load', function (e) {
                 Refer.addImgFromURL({
                   src: this.result as string,
                   callback: (ele) => { resolve(ele); },
@@ -252,7 +252,7 @@ const ReferCanvas = () => {
                 });
               });
             });
-            
+
             appendLength += 1;
             addedElements.push(waitForLoad);
           }
@@ -292,15 +292,15 @@ const ReferCanvas = () => {
   // 画布100%展示，以中心区域缩放
   const zoomCenterTo = useCallback((value = 1, relative = false) => {
     const Refer = ReferRef.current;
-      if (Refer) {
-        const centerPoint = Refer.canvas.getCenter();
-        let point = new fabric.Point(centerPoint.left, centerPoint.top);
-        if (relative) {
-          value = Refer.getZoom() * value;
-        }
-        const zoom = Math.min(100, Math.max(0.01, value));
-        Refer.zoomToPoint(point, zoom);
+    if (Refer) {
+      const centerPoint = Refer.canvas.getCenter();
+      let point = new fabric.Point(centerPoint.left, centerPoint.top);
+      if (relative) {
+        value = Refer.getZoom() * value;
       }
+      const zoom = Math.min(100, Math.max(0.01, value));
+      Refer.zoomToPoint(point, zoom);
+    }
   }, []);
 
   // 拖拽本地文件到画布
@@ -311,7 +311,7 @@ const ReferCanvas = () => {
       const dropAction = (event: IEvent) => {
         const originEvent = event.e as DragEvent;
         originEvent.preventDefault();
-  
+
         const items = originEvent.dataTransfer?.items;
         addFromDataTransfer(items, originEvent)
           .then((eles) => {
@@ -365,7 +365,7 @@ const ReferCanvas = () => {
             // 系统剪贴板没粘贴内容，则粘贴画布剪贴板内容
             ReferRef.current?.pasteElement();
           }
-        }); 
+        });
       };
 
       const ownerDocument = canvasDom.ownerDocument;
@@ -428,9 +428,9 @@ const ReferCanvas = () => {
       const keydownAction = (e: KeyboardEvent) => {
         if (
           (
-            e.key === 'g'||
-            e.key === 'G'||
-            e.key === 'ArrowLeft'||
+            e.key === 'g' ||
+            e.key === 'G' ||
+            e.key === 'ArrowLeft' ||
             e.key === 'ArrowRight'
           ) && (!e.ctrlKey && !e.metaKey)
         ) {
@@ -442,7 +442,7 @@ const ReferCanvas = () => {
             index += (e.key === 'G' || e.key === 'ArrowLeft') ? -1 : 1;
             if (index > allElements.length - 1) { index = 0 }
             if (index < 0) { index = allElements.length }
-            
+
             const targetEle = allElements[index];
             console.info(index, targetEle);
             switchFitViewElement(targetEle);
@@ -517,8 +517,8 @@ const ReferCanvas = () => {
     }
   }, []);
 
-   // 键盘 Ctrl + z、 Ctrl + shift + z ：历史记录操作
-   useEffect(() => {
+  // 键盘 Ctrl + z、 Ctrl + shift + z ：历史记录操作
+  useEffect(() => {
     const canvasDom = canvasEl.current;
     const Refer = ReferRef.current;
     if (canvasDom) {
@@ -549,39 +549,49 @@ const ReferCanvas = () => {
     }
   }, []);
 
-  // 键盘：Copy Command + C
-  // useEffect(() => {
-  //   const canvasDom = canvasEl.current;
-  //   if (canvasDom) {
-  //     const ownerDocument = canvasDom.ownerDocument;
+  // 键盘：Copy Command + shift + C
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
 
-  //     const keydownAction = (e: KeyboardEvent) => {
-  //       if (e.key === 'c' && (e.ctrlKey || e.metaKey)) {
-  //         if (ReferRef.current) {
-  //           e.preventDefault();
-  //           ReferRef.current.copyElement(undefined, e);
-  //         }
-  //       }
-  //     }
-  //     ownerDocument.addEventListener('keydown', keydownAction);
+      const keydownAction = async (e: KeyboardEvent) => {
+        if (e.key === 'c' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
+          if (ReferRef.current) {
+            e.preventDefault();
+            const elements = ReferRef.current.getActiveObject();
+            const imageDataURL = elements.toDataURL({ format: 'png' });
 
-  //     return () => {
-  //       ownerDocument.removeEventListener('keydown', keydownAction);
-  //     }
-  //   }
-  // }, []);
+
+            const res = await fetch(imageDataURL);
+            const blob = await res.blob();
+            const data = [new ClipboardItem({ [blob.type]: blob })];
+
+            navigator.clipboard.write(data).then(() => {
+              console.info('复制成功');
+            });
+          }
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
 
   // 画布大小变化
   useEffect(() => {
     const Ref = ReferRef.current;
     if (Ref) {
-      window.addEventListener('resize', function (){
+      window.addEventListener('resize', function () {
         const canvas = Ref.canvas;
         canvas.setWidth(document.documentElement.clientWidth);
         canvas.setHeight(document.documentElement.clientHeight);
         canvas.requestRenderAll();
         canvas.calcOffset();
-      }, {passive: true});
+      }, { passive: true });
     }
   }, []);
 
@@ -591,7 +601,7 @@ const ReferCanvas = () => {
     if (canvasDom) {
       const Refer = ReferRef.current;
       if (Refer) {
-        const action = (e:any) => {
+        const action = (e: any) => {
           const zoom = Refer.getZoom();
           setZoom(zoom);
         };
