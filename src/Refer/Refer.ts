@@ -195,8 +195,9 @@ export default class Refer {
   initDragMode() {
     let oPoint: Point;
     let oTransform: number[] = [];
+    this.canvas.fireMiddleClick = true; // 启用中间
     this.canvas.on('mouse:down', (e) => {
-      if (this.dragMode) {
+      if (this.dragMode || e.button === 2) {
         this.dragging = true;
         if (e.pointer) {
           oPoint = e.pointer;

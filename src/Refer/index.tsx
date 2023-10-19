@@ -67,14 +67,14 @@ const ReferCanvas = () => {
     }
   }, []);
 
-  // 移动画布
+  // 移动画布: 空格键 或 鼠标中间
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
       const ownerDocument = canvasDom.ownerDocument;
 
-      const keydownAction = (e: KeyboardEvent) => {
-        if (e.key === ' ') {
+      const keydownAction = (e: KeyboardEvent | MouseEvent) => {
+        if ((e as KeyboardEvent).key === ' ' || (e as MouseEvent).button === 1) {
           if (ReferRef.current && !ReferRef.current.dragMode) {
             e.preventDefault();
             ReferRef.current.setDragMode(true);
@@ -82,8 +82,8 @@ const ReferCanvas = () => {
         }
       }
 
-      const keyupAction = (e: KeyboardEvent) => {
-        if (e.key === ' ') {
+      const keyupAction = (e: KeyboardEvent | MouseEvent) => {
+        if ((e as KeyboardEvent).key === ' ' || (e as MouseEvent).button === 1) {
           if (ReferRef.current) {
             ReferRef.current.setDragMode(false);
           }
@@ -93,9 +93,15 @@ const ReferCanvas = () => {
       ownerDocument.addEventListener('keydown', keydownAction);
       ownerDocument.addEventListener('keyup', keyupAction);
 
+      ownerDocument.addEventListener('mousedown', keydownAction);
+      ownerDocument.addEventListener('mouseup', keyupAction);
+
       return () => {
         ownerDocument.removeEventListener('keydown', keydownAction);
-        ownerDocument.addEventListener('keyup', keyupAction);
+        ownerDocument.removeEventListener('keyup', keyupAction);
+
+        ownerDocument.removeEventListener('mousedown', keydownAction);
+        ownerDocument.removeEventListener('mouseup', keyupAction);
       }
     }
   }, []);
