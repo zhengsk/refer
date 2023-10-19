@@ -240,6 +240,7 @@ export default class Refer {
     this.dragMode = draggable;
     this.canvas.setCursor(draggable ? 'grab' : 'default');
     this.canvas.interactive = !draggable;
+    this.canvas.selection = !draggable;
 
     //  TODO: Not all object is selectable
     this.canvas.forEachObject(object => {
