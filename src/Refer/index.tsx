@@ -2,7 +2,7 @@ import { fabric } from 'fabric';
 import type { IEvent, Point, Object, ActiveSelection } from 'fabric/fabric-impl';
 import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from './Refer';
-
+import { saveAs, fileOpen } from '../utils/fileAccess';
 import styles from './index.module.less';
 
 const vw = document.documentElement.clientWidth;
@@ -313,10 +313,25 @@ const ReferCanvas = () => {
         originEvent.preventDefault();
 
         const items = originEvent.dataTransfer?.items;
-        addFromDataTransfer(items, originEvent)
-          .then((eles) => {
-            Refer.selectElement(eles);
-          });
+        if (items) {
+          const JSONFile = [...items].find(item => item.type.match('^application/json'));
+          if (JSONFile) { // 加载 refer 文件
+            const textStr = JSONFile.getAsFile()?.text();
+            textStr?.then(str => {
+              try {
+                const json = JSON.parse(str);
+                return Refer.loadJSON(json)
+              } catch {
+                // Do nothing;
+              }
+            })
+          }
+
+          addFromDataTransfer(items, originEvent)
+            .then((eles) => {
+              Refer.selectElement(eles);
+            });
+        }
       }
 
       Refer.addEventListener('drop', dropAction);
@@ -570,6 +585,59 @@ const ReferCanvas = () => {
             navigator.clipboard.write(data).then(() => {
               console.info('复制成功');
             });
+          }
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
+  // 键盘：Save Command + shift + S
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+
+      const keydownAction = async (e: KeyboardEvent) => {
+        if (e.key === 's' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
+          if (ReferRef.current) {
+            const jsonData = ReferRef.current.exportJSON();
+            saveAs({ dataStr: JSON.stringify(jsonData, null, 4) });
+          }
+        }
+      }
+      ownerDocument.addEventListener('keydown', keydownAction);
+
+      return () => {
+        ownerDocument.removeEventListener('keydown', keydownAction);
+      }
+    }
+  }, []);
+
+  // 键盘：Open Command + O
+  useEffect(() => {
+    const canvasDom = canvasEl.current;
+    if (canvasDom) {
+      const ownerDocument = canvasDom.ownerDocument;
+
+      const keydownAction = async (e: KeyboardEvent) => {
+        if (e.key === 'o' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          if (ReferRef.current) {
+            const file = await fileOpen({
+              mimeTypes: ['application/json'],
+            });
+            const jsonStr = await file.text();
+            try {
+              const jsonData = JSON.parse(jsonStr);
+              return ReferRef.current.loadJSON(jsonData);
+            } catch {
+              // Do nothing
+            }
           }
         }
       }

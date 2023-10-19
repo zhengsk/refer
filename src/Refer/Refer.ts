@@ -14,10 +14,10 @@ export default class Refer {
   dragMode: boolean;
   dragging: boolean;
 
-  preViewStatus: {zoom: number, panPoint: Point, element: Object} | undefined;
+  preViewStatus: { zoom: number, panPoint: Point, element: Object } | undefined;
   clipboard: Object[] = [];
 
-  constructor(fabricCanvas: Canvas ) {
+  constructor(fabricCanvas: Canvas) {
     this.canvas = fabricCanvas;
     this.dragMode = false;
     this.dragging = false;
@@ -30,7 +30,7 @@ export default class Refer {
   private setDefaultStyle() {
     fabric.Object.prototype.set({
       transparentCorners: false,
-      
+
       // border
       // borderDashArray: [5,5],
       borderColor: '#ff5967',
@@ -94,7 +94,7 @@ export default class Refer {
   restorePreViewStatus() {
     if (this.preViewStatus) {
       const { zoom, panPoint } = this.preViewStatus;
-      this.canvas.zoomToPoint(new fabric.Point(-panPoint.x, -panPoint.y ), zoom );
+      this.canvas.zoomToPoint(new fabric.Point(-panPoint.x, -panPoint.y), zoom);
       this.canvas.absolutePan(panPoint);
 
       this.preViewStatus = undefined;
@@ -114,7 +114,7 @@ export default class Refer {
     const { canvas } = this;
     canvas.renderAll();
     const ele: Object = element || canvas.getActiveObject();
-    
+
     if (ele) {
       if (saveState) {
         this.setPreViewStatus(ele); // Save status
@@ -124,26 +124,26 @@ export default class Refer {
 
       const offset = 20;
       const zoom = canvas.getZoom();
-      
+
       const canvasWidth = canvas.getWidth();
       const canvasHeight = canvas.getHeight();
-      
+
       const elementWidth = (ele.getScaledWidth() + offset) * zoom;
       const elementHeight = (ele.getScaledHeight() + offset) * zoom;
-      
+
       const widthRatio = canvasWidth / (elementWidth);
       const heightRatio = canvasHeight / (elementHeight);
 
       const ratio = Math.min(widthRatio, heightRatio);
 
       const eleCenterPoint = ele.getCenterPoint();
-      
+
       const absolutePanSize = new fabric.Point(
-        (eleCenterPoint.x) * zoom  - canvasWidth / 2,
-        (eleCenterPoint.y) * zoom  - canvasHeight / 2
+        (eleCenterPoint.x) * zoom - canvasWidth / 2,
+        (eleCenterPoint.y) * zoom - canvasHeight / 2
       );
       canvas.absolutePan(absolutePanSize);
-      
+
       // const canvasCenterPoint = canvas.getVpCenter();
       // const relativePanSize =  new fabric.Point(
       //   (canvasCenterPoint.x - eleCenterPoint.x) * zoom,
@@ -207,14 +207,14 @@ export default class Refer {
         }
 
         this.canvas.setCursor('grabbing');
-      }         
+      }
     });
 
     this.canvas.on('mouse:move', (e) => {
       if (this.dragMode) {
         this.canvas.setCursor('grab');
       }
-      
+
       if (this.dragging && e.pointer) {
         const dx = e.pointer.x - oPoint?.x;
         const dy = e.pointer.y - oPoint?.y;
@@ -238,7 +238,7 @@ export default class Refer {
 
   setDragMode(draggable: boolean) {
     this.dragMode = draggable;
-    this.canvas.setCursor( draggable ? 'grab' : 'default');
+    this.canvas.setCursor(draggable ? 'grab' : 'default');
     this.canvas.interactive = !draggable;
 
     //  TODO: Not all object is selectable
@@ -362,5 +362,17 @@ export default class Refer {
   // history redo
   redo() {
     this.canvas?.redo();
+  }
+
+  // save json
+  exportJSON() {
+    return this.canvas.toDatalessJSON();
+  }
+
+  // load json
+  loadJSON(jsonData: string | object) {
+    return new Promise((resolve, reject) => {
+      this.canvas.loadFromJSON(jsonData, resolve);
+    });
   }
 }
