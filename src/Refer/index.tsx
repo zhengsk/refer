@@ -41,7 +41,7 @@ const ReferCanvas = () => {
       inVpCenter: true,
     });
     Refer.addImgFromURL({
-      src: 'https://gd-hbimg.huaban.com/371979b412e17c0e300afcc5eb5973313e2a621b241b4-J3QAQx',
+      src: 'https://gd-hbimg.huaban.com/608c2098a0dc521aaf7294df06409fd0c3cc503c4bc04-DgtQ5V',
       inVpCenter: true,
     });
 
