@@ -1,6 +1,16 @@
 import { fabric } from 'fabric';
 import 'fabric-history'; // history https://www.npmjs.com/package/fabric-history
-import type { ActiveSelection, Canvas, IImageOptions, Image, Object, Point, Text, TextOptions } from 'fabric/fabric-impl';
+import type {
+  ActiveSelection,
+  Canvas,
+  IImageOptions,
+  Image,
+  IText,
+  ITextOptions,
+  Object,
+  Point,
+  Text,
+} from 'fabric/fabric-impl';
 
 declare module 'fabric/fabric-impl' {
   export interface Canvas {
@@ -10,20 +20,24 @@ declare module 'fabric/fabric-impl' {
 }
 
 export default class Refer {
-  canvas: Canvas;
-  dragMode: boolean;
-  dragging: boolean;
+  public canvas: Canvas;
+  public dragMode: boolean;
+  public dragging: boolean;
+  public textEditing: boolean;
+  public textEditingElement: IText | undefined;
 
-  preViewStatus: { zoom: number, panPoint: Point, element: Object } | undefined;
-  clipboard: Object[] = [];
+  public preViewStatus: { zoom: number, panPoint: Point, element: Object } | undefined;
+  public clipboard: Object[] = [];
 
   constructor(fabricCanvas: Canvas) {
     this.canvas = fabricCanvas;
     this.dragMode = false;
     this.dragging = false;
+    this.textEditing = false;
 
-    this.setDefaultStyle();
-    this.initDragMode();
+    this.setDefaultStyle(); // 设置默认样式
+    this.initDragMode(); // 初始化拖拽模式
+    this.bindTextEditingEvent(); // 绑定事件，判断是否处于文本编辑状态
   }
 
   // Objeft default style
@@ -180,10 +194,17 @@ export default class Refer {
   }
 
   // Add Text element
-  addText(text: string = '', opts: TextOptions = {
-    fill: '#ed5e77'
+  addText(text: string = '', opts: ITextOptions = {
+    fill: '#ed5e77',
   }): Text {
     var textEle = new fabric.IText(text, opts);
+    const centerPoint = this.canvas.getVpCenter();
+
+    textEle.set({
+      left: centerPoint.x - textEle.getScaledWidth() / 2,
+      top: centerPoint.y - textEle.getScaledHeight() / 2,
+    });
+
     this.canvas.add(textEle);
     return textEle;
   }
@@ -201,10 +222,11 @@ export default class Refer {
     return this;
   }
 
+  // 初始化拖拽模式
   initDragMode() {
     let oPoint: Point;
     let oTransform: number[] = [];
-    this.canvas.fireMiddleClick = true; // 启用中间
+    this.canvas.fireMiddleClick = true; // 启用中键
     this.canvas.on('mouse:down', (e) => {
       if (this.dragMode || e.button === 2) {
         this.dragging = true;
@@ -243,6 +265,19 @@ export default class Refer {
       if (this.dragMode) {
         this.canvas.setCursor('grab');
       }
+    });
+  }
+
+  // 绑定事件，判断是否处于文本编辑状态
+  bindTextEditingEvent() {
+    this.canvas.on('text:editing:entered', (e) => {
+      debugger;
+      this.textEditing = true;
+      this.textEditingElement = e.target as IText;
+    });
+
+    this.canvas.on('text:editing:exited', (e) => {
+      this.textEditing = false;
     });
   }
 

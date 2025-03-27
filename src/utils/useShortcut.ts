@@ -26,6 +26,11 @@ export function useShortcut({
   };
 
   const action = useCallback((e: KeyboardEvent) => {
+    // 如果处于文本编辑状态，则不执行回调
+    if ((element as any).referIsTextEditing) {
+      return;
+    }
+
     // 检查是否有任意一组快捷键匹配
     const isAnyKeyCombinationMatched = keys.some(keyStr => {
       const keyArray = parseKeyString(keyStr);

@@ -14,7 +14,7 @@ const ReferCanvas = () => {
   const canvasEl = useRef<HTMLCanvasElement | null>(null);
   const [zoom, setZoom] = useState(1);
   // const {isFitviewMode, setIsFitViewMode} = useState(false);
-
+  const element = canvasEl.current?.ownerDocument;
 
   useEffect(() => {
     const options = { preserveObjectStacking: true };
@@ -24,6 +24,15 @@ const ReferCanvas = () => {
     ReferRef.current = Refer;
     (window as any).Refer = Refer;
 
+    // 监听文本编辑状态, 添加到element上, 用户快捷键监听是判断是否处于文本编辑状态
+    Refer.addEventListener('text:editing:entered', () => {
+      (element as any).referIsTextEditing = true;
+    });
+    Refer.addEventListener('text:editing:exited', () => {
+      (element as any).referIsTextEditing = false;
+    });
+
+    // 添加一个红色矩形
     var rect = new fabric.Rect({
       left: -100,
       top: -100,
@@ -33,6 +42,7 @@ const ReferCanvas = () => {
     });
     Refer.canvas.add(rect);
 
+    // 添加图片
     Refer.addImgFromURL({
       src: 'https://gd-hbimg.huaban.com/13b957418c1f59260285f0ba664fd222b2c78fd581db-ElxX5H_fw1200',
       inVpCenter: true,
@@ -61,7 +71,12 @@ const ReferCanvas = () => {
         event.preventDefault();
         const zoom = Refer.getZoom();
         let ratio = event.deltaY * 0.0015;
-        if (event.shiftKey || event.metaKey || event.ctrlKey) { ratio *= 10; }
+        if (event.shiftKey) {
+          ratio *= 10;
+        } else if (event.altKey) {
+          ratio *= 0.1;
+        }
+
         const newZoom = Math.min(100, Math.max(0.01, zoom * (1 - ratio)));
         Refer.zoomToPoint(e.pointer as Point, newZoom);
       });
@@ -107,27 +122,17 @@ const ReferCanvas = () => {
     }
   }, []);
 
-  // 键盘：删除选中元素
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-
-      const keydownAction = (e: KeyboardEvent) => {
-        if (e.key === 'Delete' || e.key === 'Backspace') {
-          if (ReferRef.current) {
-            e.preventDefault();
-            ReferRef.current.deleteElement();
-          }
-        }
+  // 键盘：删除选中元素 Delete、Backspace
+  useShortcut({
+    keys: ['Delete', 'Backspace'],
+    callback: (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (ReferRef.current) {
+        ReferRef.current.deleteElement();
       }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
+    },
+    element,
+  });
 
   // 元素自适应窗口展示切换
   const switchFitViewElement = useCallback((element?: Object) => {
@@ -401,162 +406,93 @@ const ReferCanvas = () => {
   }, []);
 
   // 键盘 Command + A：全选
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-
-      const keydownAction = (e: KeyboardEvent) => {
-        if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
-          if (ReferRef.current) {
-            e.preventDefault();
-            ReferRef.current.selectElement();
-          }
-        }
+  useShortcut({
+    keys: ['meta+a', 'ctrl+a'],
+    callback: (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (ReferRef.current) {
+        ReferRef.current.selectElement();
       }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
+    },
+    element,
+  });
 
   // 键盘 F：元素自适应窗口展示切换  
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-
-      const keydownAction = (e: KeyboardEvent) => {
-        if (e.key === 'f' && (!e.ctrlKey && !e.metaKey)) {
-          switchFitViewElement();
-        }
-      }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
+  useShortcut({
+    keys: ['f'],
+    callback: (e: KeyboardEvent) => {
+      switchFitViewElement();
+    },
+    element,
+  });
 
   // 键盘 G：下一个元素自适应 
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
+  useShortcut({
+    keys: ['g', 'G', 'ArrowLeft', 'ArrowRight'],
+    callback: (e: KeyboardEvent) => {
+      const Refer = ReferRef.current;
+      if (Refer) {
+        let currentElement = Refer.preViewStatus?.element || Refer.canvas.getActiveObject();
+        const allElements = Refer.canvas.getObjects();
+        let index = allElements.indexOf(currentElement);
+        index += (e.key === 'G' || e.key === 'ArrowLeft') ? -1 : 1;
+        if (index > allElements.length - 1) { index = 0 }
+        if (index < 0) { index = allElements.length }
 
-      const keydownAction = (e: KeyboardEvent) => {
-        if (
-          (
-            e.key === 'g' ||
-            e.key === 'G' ||
-            e.key === 'ArrowLeft' ||
-            e.key === 'ArrowRight'
-          ) && (!e.ctrlKey && !e.metaKey)
-        ) {
-          const Refer = ReferRef.current;
-          if (Refer) {
-            let currentElement = Refer.preViewStatus?.element || Refer.canvas.getActiveObject();
-            const allElements = Refer.canvas.getObjects();
-            let index = allElements.indexOf(currentElement);
-            index += (e.key === 'G' || e.key === 'ArrowLeft') ? -1 : 1;
-            if (index > allElements.length - 1) { index = 0 }
-            if (index < 0) { index = allElements.length }
-
-            const targetEle = allElements[index];
-            console.info(index, targetEle);
-            switchFitViewElement(targetEle);
-          }
-        }
+        const targetEle = allElements[index];
+        console.info(index, targetEle);
+        switchFitViewElement(targetEle);
       }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
+    },
+    element,
+  });
 
   // 键盘 0：缩放显示1:1 
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-      const keydownAction = (e: KeyboardEvent) => {
-        if (e.key === '0') {
-          e.preventDefault();
-          zoomCenterTo();
-        }
-      }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
+  useShortcut({
+    keys: ['0'],
+    callback: (e: KeyboardEvent) => {
+      e.preventDefault();
+      zoomCenterTo();
+    },
+    element,
+  });
 
   // 键盘 1：所有内容自适应到视窗
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-      const keydownAction = (e: KeyboardEvent) => {
-        if (e.key === '1') {
-          e.preventDefault();
-          allElementFitView();
-        }
-      }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
+  useShortcut({
+    keys: ['1'],
+    callback: (e: KeyboardEvent) => {
+      e.preventDefault();
+      allElementFitView();
+    },
+    element,
+  });
 
   // 键盘 -、 + ：缩放画布
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-      const keydownAction = (e: KeyboardEvent) => {
-        if (e.key === '-') {
-          e.preventDefault();
-          zoomCenterTo(2 / 3, true);
-        } else if (e.key === '=') {
-          e.preventDefault();
-          zoomCenterTo(3 / 2, true);
-        }
+  useShortcut({
+    keys: ['-', '='],
+    callback: (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (e.key === '-') {
+        zoomCenterTo(2 / 3, true);
+      } else if (e.key === '=') {
+        zoomCenterTo(3 / 2, true);
       }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
+    },
+    element,
+  });
 
   // 键盘 Ctrl + z、 Ctrl + shift + z ：历史记录操作
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    const Refer = ReferRef.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-      const keydownAction = (e: KeyboardEvent) => {
-        if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
-          e.shiftKey ? Refer?.redo() : Refer?.undo();
-        }
+  useShortcut({
+    keys: ['meta+z', 'meta+shift+z', 'ctrl+z', 'ctrl+shift+z'],
+    callback: (e: KeyboardEvent) => {
+      e.preventDefault();
+      const Refer = ReferRef.current;
+      if (Refer) {
+        e.shiftKey ? Refer?.redo() : Refer?.undo();
       }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
+    },
+    element,
+  });
 
   // 选中元素直接移到最前面
   useEffect(() => {
@@ -572,36 +508,25 @@ const ReferCanvas = () => {
   }, []);
 
   // 键盘：Copy Command + shift + C
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
+  useShortcut({
+    keys: ['meta+shift+c', 'ctrl+shift+c'],
+    callback: async (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (ReferRef.current) {
+        const elements = ReferRef.current.getActiveObject();
+        const imageDataURL = elements.toDataURL({ format: 'png' });
 
-      const keydownAction = async (e: KeyboardEvent) => {
-        if (e.key === 'c' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
-          if (ReferRef.current) {
-            e.preventDefault();
-            const elements = ReferRef.current.getActiveObject();
-            const imageDataURL = elements.toDataURL({ format: 'png' });
+        const res = await fetch(imageDataURL);
+        const blob = await res.blob();
+        const data = [new ClipboardItem({ [blob.type]: blob })];
 
-
-            const res = await fetch(imageDataURL);
-            const blob = await res.blob();
-            const data = [new ClipboardItem({ [blob.type]: blob })];
-
-            navigator.clipboard.write(data).then(() => {
-              console.info('复制成功');
-            });
-          }
-        }
+        navigator.clipboard.write(data).then(() => {
+          console.info('复制成功');
+        });
       }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
+    },
+    element,
+  });
 
   // 键盘：Save Command + shift + S
   useEffect(() => {
@@ -626,35 +551,25 @@ const ReferCanvas = () => {
   }, []);
 
   // 键盘：Open Command + O
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
-
-      const keydownAction = async (e: KeyboardEvent) => {
-        if (e.key === 'o' && (e.ctrlKey || e.metaKey)) {
-          e.preventDefault();
-          if (ReferRef.current) {
-            const file = await fileOpen({
-              mimeTypes: ['application/json'],
-            });
-            const jsonStr = await file.text();
-            try {
-              const jsonData = JSON.parse(jsonStr);
-              return ReferRef.current.loadJSON(jsonData);
-            } catch {
-              // Do nothing
-            }
-          }
+  useShortcut({
+    keys: ['meta+o', 'ctrl+o'],
+    callback: async (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (ReferRef.current) {
+        const file = await fileOpen({
+          mimeTypes: ['application/json'],
+        });
+        const jsonStr = await file.text();
+        try {
+          const jsonData = JSON.parse(jsonStr);
+          return ReferRef.current.loadJSON(jsonData);
+        } catch {
+          // Do nothing
         }
       }
-      ownerDocument.addEventListener('keydown', keydownAction);
-
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
-      }
-    }
-  }, []);
+    },
+    element,
+  });
 
   // 画布大小变化
   useEffect(() => {
@@ -707,13 +622,19 @@ const ReferCanvas = () => {
   const addText = useCallback(() => {
     const Refer = ReferRef.current;
     if (Refer) {
-      Refer.addText('Hello Refer!');
+      const zoom = Refer.getZoom();
+      const fontSize = 50 / zoom;
+
+      Refer.addText('Hello Refer!', {
+        fill: '#ed5e77',
+        fontSize,
+      });
     }
   }, []);
 
   // 键盘：添加文本 T
   useShortcut({
-    element: canvasEl.current?.ownerDocument,
+    element,
     keys: ['t'],
     callback: addText,
   });
