@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from './Refer';
 import { saveAs, fileOpen } from '../utils/fileAccess';
 import styles from './index.module.less';
+import { useShortcut } from '../utils/useShortcut';
 
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
@@ -701,6 +702,21 @@ const ReferCanvas = () => {
       }
     }
   }, []);
+
+  // 添加文本
+  const addText = useCallback(() => {
+    const Refer = ReferRef.current;
+    if (Refer) {
+      Refer.addText('Hello Refer!');
+    }
+  }, []);
+
+  // 键盘：添加文本 T
+  useShortcut({
+    element: canvasEl.current?.ownerDocument,
+    keys: ['t'],
+    callback: addText,
+  });
 
   return (
     <div>

@@ -1,6 +1,6 @@
 import { fabric } from 'fabric';
 import 'fabric-history'; // history https://www.npmjs.com/package/fabric-history
-import type { ActiveSelection, Canvas, IImageOptions, Image, Object, Point } from 'fabric/fabric-impl';
+import type { ActiveSelection, Canvas, IImageOptions, Image, Object, Point, Text, TextOptions } from 'fabric/fabric-impl';
 
 declare module 'fabric/fabric-impl' {
   export interface Canvas {
@@ -177,6 +177,15 @@ export default class Refer {
       this.canvas.add(oImg);
       callback?.call(this, oImg);
     }, imageOptions);
+  }
+
+  // Add Text element
+  addText(text: string = '', opts: TextOptions = {
+    fill: '#ed5e77'
+  }): Text {
+    var textEle = new fabric.IText(text, opts);
+    this.canvas.add(textEle);
+    return textEle;
   }
 
   addEventListener(eventName: string, callback: any) {
