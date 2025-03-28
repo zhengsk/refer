@@ -62,7 +62,7 @@ const ReferCanvas = () => {
     }
   }, []);
 
-  // 鼠标滚动缩放画布
+  // 鼠标滚动缩放或移动画布
   useEffect(() => {
     const Refer = ReferRef.current;
     if (Refer) {
@@ -70,15 +70,32 @@ const ReferCanvas = () => {
         const event = e.e as WheelEvent;
         event.preventDefault();
         const zoom = Refer.getZoom();
-        let ratio = event.deltaY * 0.0015;
-        if (event.shiftKey) {
-          ratio *= 10;
-        } else if (event.altKey) {
-          ratio *= 0.1;
-        }
 
-        const newZoom = Math.min(100, Math.max(0.01, zoom * (1 - ratio)));
-        Refer.zoomToPoint(e.pointer as Point, newZoom);
+        // 按住ctrl键，滚动鼠标滚轮，缩放画布
+        if (event.ctrlKey || event.metaKey) {
+          let ratio = event.deltaY * (Number.isInteger(event.deltaY) ? 0.003 : 0.02);
+          if (event.shiftKey) {
+            ratio *= 5;
+          } else if (event.altKey) {
+            ratio *= 0.1;
+          }
+
+          const newZoom = Math.min(100, Math.max(0.01, zoom * (1 - ratio)));
+          Refer.zoomToPoint(e.pointer as Point, newZoom);
+        } else { // 不按住ctrl键，滚动鼠标滚轮，移动画布
+          // 滚动，移动画布
+          let dx = -event.deltaX;
+          let dy = -event.deltaY;
+
+          // 按住shift键，切换水平和垂直切换
+          if (event.shiftKey) {
+            const temp = dx;
+            dx = dy;
+            dy = temp;
+          }
+
+          Refer.moveViewportBy(dx, dy);
+        }
       });
     }
   }, []);

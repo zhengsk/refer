@@ -268,6 +268,16 @@ export default class Refer {
     });
   }
 
+  // 移动画布
+  moveViewportBy(dx: number, dy: number) {
+    const oTransform = this.canvas.viewportTransform;
+    const newTransform = oTransform ? [...oTransform] : [];
+    newTransform[4] += dx;
+    newTransform[5] += dy;
+    this.canvas.setViewportTransform(newTransform);
+    return this;
+  }
+
   // 绑定事件，判断是否处于文本编辑状态
   bindTextEditingEvent() {
     this.canvas.on('text:editing:entered', (e) => {
