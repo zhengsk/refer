@@ -281,7 +281,6 @@ export default class Refer {
   // 绑定事件，判断是否处于文本编辑状态
   bindTextEditingEvent() {
     this.canvas.on('text:editing:entered', (e) => {
-      debugger;
       this.textEditing = true;
       this.textEditingElement = e.target as IText;
     });

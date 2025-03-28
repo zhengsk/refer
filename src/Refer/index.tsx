@@ -212,7 +212,13 @@ const ReferCanvas = () => {
         const item = items[i];
         if ((item.kind === 'string') && (item.type.match('^text/plain'))) {
           // Add Text node
-
+          const newElePromise = new Promise<Object | undefined>((resolve) => {
+            item.getAsString((data) => {
+              const newEle = Refer.addText(data);
+              resolve(newEle);
+            })
+          });
+          addedElements.push(newElePromise);
         } else if ((item.kind === 'string') && (item.type.match('^text/html'))) {
           const htmlPromise = new Promise<Array<Object | undefined>>((resolve) => {
             // Get image from html
@@ -272,13 +278,33 @@ const ReferCanvas = () => {
 
             const waitForLoad: Promise<Object> = new Promise((resolve) => {
               let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
-              reader.addEventListener('load', function (e) {
-                Refer.addImgFromURL({
-                  src: this.result as string,
-                  callback: (ele) => { resolve(ele); },
-                  imageOptions: { left: offset.x, top: offset.y, },
-                  inVpCenter,
-                });
+              reader.addEventListener('load', () => {
+                const zoom = Refer.getZoom();
+
+                const img = new Image();
+                img.onload = function () {
+                  // 图片显示高度为300px
+                  const imageHeight = 300;
+                  const scale = imageHeight / img.height;
+                  const imageWidth = img.width * scale;
+
+                  const renderWidth = imageWidth / zoom;
+                  const renderHeight = imageHeight / zoom;
+
+                  Refer.addImgFromURL({
+                    src: reader.result as string,
+                    callback: (ele) => { resolve(ele); },
+                    imageOptions: {
+                      scaleX: scale / zoom,
+                      scaleY: scale / zoom,
+                      left: offset.x - renderWidth / 2,
+                      top: offset.y - renderHeight / 2,
+                    },
+                    inVpCenter,
+                  });
+                };
+                img.src = reader.result as string;
+
               });
             });
 
