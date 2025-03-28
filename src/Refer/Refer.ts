@@ -1,6 +1,16 @@
 import { fabric } from 'fabric';
 import 'fabric-history'; // history https://www.npmjs.com/package/fabric-history
-import type { ActiveSelection, Canvas, IImageOptions, Image, Object, Point } from 'fabric/fabric-impl';
+import type {
+  ActiveSelection,
+  Canvas,
+  IImageOptions,
+  Image,
+  IText,
+  ITextOptions,
+  Object,
+  Point,
+  Text,
+} from 'fabric/fabric-impl';
 
 declare module 'fabric/fabric-impl' {
   export interface Canvas {
@@ -10,27 +20,31 @@ declare module 'fabric/fabric-impl' {
 }
 
 export default class Refer {
-  canvas: Canvas;
-  dragMode: boolean;
-  dragging: boolean;
+  public canvas: Canvas;
+  public dragMode: boolean;
+  public dragging: boolean;
+  public textEditing: boolean;
+  public textEditingElement: IText | undefined;
 
-  preViewStatus: {zoom: number, panPoint: Point, element: Object} | undefined;
-  clipboard: Object[] = [];
+  public preViewStatus: { zoom: number, panPoint: Point, element: Object } | undefined;
+  public clipboard: Object[] = [];
 
-  constructor(fabricCanvas: Canvas ) {
+  constructor(fabricCanvas: Canvas) {
     this.canvas = fabricCanvas;
     this.dragMode = false;
     this.dragging = false;
+    this.textEditing = false;
 
-    this.setDefaultStyle();
-    this.initDragMode();
+    this.setDefaultStyle(); // 设置默认样式
+    this.initDragMode(); // 初始化拖拽模式
+    this.bindTextEditingEvent(); // 绑定事件，判断是否处于文本编辑状态
   }
 
   // Objeft default style
   private setDefaultStyle() {
     fabric.Object.prototype.set({
       transparentCorners: false,
-      
+
       // border
       // borderDashArray: [5,5],
       borderColor: '#ff5967',
@@ -94,7 +108,7 @@ export default class Refer {
   restorePreViewStatus() {
     if (this.preViewStatus) {
       const { zoom, panPoint } = this.preViewStatus;
-      this.canvas.zoomToPoint(new fabric.Point(-panPoint.x, -panPoint.y ), zoom );
+      this.canvas.zoomToPoint(new fabric.Point(-panPoint.x, -panPoint.y), zoom);
       this.canvas.absolutePan(panPoint);
 
       this.preViewStatus = undefined;
@@ -114,7 +128,7 @@ export default class Refer {
     const { canvas } = this;
     canvas.renderAll();
     const ele: Object = element || canvas.getActiveObject();
-    
+
     if (ele) {
       if (saveState) {
         this.setPreViewStatus(ele); // Save status
@@ -124,26 +138,26 @@ export default class Refer {
 
       const offset = 20;
       const zoom = canvas.getZoom();
-      
+
       const canvasWidth = canvas.getWidth();
       const canvasHeight = canvas.getHeight();
-      
+
       const elementWidth = (ele.getScaledWidth() + offset) * zoom;
       const elementHeight = (ele.getScaledHeight() + offset) * zoom;
-      
+
       const widthRatio = canvasWidth / (elementWidth);
       const heightRatio = canvasHeight / (elementHeight);
 
       const ratio = Math.min(widthRatio, heightRatio);
 
       const eleCenterPoint = ele.getCenterPoint();
-      
+
       const absolutePanSize = new fabric.Point(
-        (eleCenterPoint.x) * zoom  - canvasWidth / 2,
-        (eleCenterPoint.y) * zoom  - canvasHeight / 2
+        (eleCenterPoint.x) * zoom - canvasWidth / 2,
+        (eleCenterPoint.y) * zoom - canvasHeight / 2
       );
       canvas.absolutePan(absolutePanSize);
-      
+
       // const canvasCenterPoint = canvas.getVpCenter();
       // const relativePanSize =  new fabric.Point(
       //   (canvasCenterPoint.x - eleCenterPoint.x) * zoom,
@@ -179,6 +193,22 @@ export default class Refer {
     }, imageOptions);
   }
 
+  // Add Text element
+  addText(text: string = '', opts: ITextOptions = {
+    fill: '#ed5e77',
+  }): Text {
+    var textEle = new fabric.IText(text, opts);
+    const centerPoint = this.canvas.getVpCenter();
+
+    textEle.set({
+      left: centerPoint.x - textEle.getScaledWidth() / 2,
+      top: centerPoint.y - textEle.getScaledHeight() / 2,
+    });
+
+    this.canvas.add(textEle);
+    return textEle;
+  }
+
   addEventListener(eventName: string, callback: any) {
     this.canvas.on(eventName, callback);
   }
@@ -192,11 +222,13 @@ export default class Refer {
     return this;
   }
 
+  // 初始化拖拽模式
   initDragMode() {
     let oPoint: Point;
     let oTransform: number[] = [];
+    this.canvas.fireMiddleClick = true; // 启用中键
     this.canvas.on('mouse:down', (e) => {
-      if (this.dragMode) {
+      if (this.dragMode || e.button === 2) {
         this.dragging = true;
         if (e.pointer) {
           oPoint = e.pointer;
@@ -207,14 +239,14 @@ export default class Refer {
         }
 
         this.canvas.setCursor('grabbing');
-      }         
+      }
     });
 
     this.canvas.on('mouse:move', (e) => {
       if (this.dragMode) {
         this.canvas.setCursor('grab');
       }
-      
+
       if (this.dragging && e.pointer) {
         const dx = e.pointer.x - oPoint?.x;
         const dy = e.pointer.y - oPoint?.y;
@@ -236,10 +268,33 @@ export default class Refer {
     });
   }
 
+  // 移动画布
+  moveViewportBy(dx: number, dy: number) {
+    const oTransform = this.canvas.viewportTransform;
+    const newTransform = oTransform ? [...oTransform] : [];
+    newTransform[4] += dx;
+    newTransform[5] += dy;
+    this.canvas.setViewportTransform(newTransform);
+    return this;
+  }
+
+  // 绑定事件，判断是否处于文本编辑状态
+  bindTextEditingEvent() {
+    this.canvas.on('text:editing:entered', (e) => {
+      this.textEditing = true;
+      this.textEditingElement = e.target as IText;
+    });
+
+    this.canvas.on('text:editing:exited', (e) => {
+      this.textEditing = false;
+    });
+  }
+
   setDragMode(draggable: boolean) {
     this.dragMode = draggable;
-    this.canvas.setCursor( draggable ? 'grab' : 'default');
+    this.canvas.setCursor(draggable ? 'grab' : 'default');
     this.canvas.interactive = !draggable;
+    this.canvas.selection = !draggable;
 
     //  TODO: Not all object is selectable
     this.canvas.forEachObject(object => {
@@ -362,5 +417,17 @@ export default class Refer {
   // history redo
   redo() {
     this.canvas?.redo();
+  }
+
+  // save json
+  exportJSON() {
+    return this.canvas.toDatalessJSON();
+  }
+
+  // load json
+  loadJSON(jsonData: string | object) {
+    return new Promise((resolve, reject) => {
+      this.canvas.loadFromJSON(jsonData, resolve);
+    });
   }
 }
