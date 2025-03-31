@@ -5,6 +5,7 @@ import ReferCreator from './Refer';
 import { saveAs, fileOpen } from '../utils/fileAccess';
 import styles from './index.module.less';
 import { useShortcut } from '../utils/useShortcut';
+import Toolbar from '../components/toolbar';
 
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
@@ -706,6 +707,9 @@ const ReferCanvas = () => {
       <div className={styles.zoom} onClick={zoomToggle}>
         {`${Math.floor(zoom * 100)}%`}
       </div>
+
+      {/* 工具栏 */}
+      <Toolbar />
     </div>
   )
 };
