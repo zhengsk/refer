@@ -5,7 +5,7 @@ import ReferCreator from './Refer';
 import { saveAs, fileOpen } from '../utils/fileAccess';
 import styles from './index.module.less';
 import { useShortcut } from '../utils/useShortcut';
-import Toolbar from '../components/toolbar';
+import Toolbar from '../components/Toolbar';
 
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;

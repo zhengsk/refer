@@ -26,7 +26,7 @@ export async function saveAs({
     await writable.write(dataStr);
     await writable.close();
   } else {
-    var blob = new Blob([dataStr], { type: "application/json;charset=utf-8" });
+    const blob = new Blob([dataStr], { type: "application/json;charset=utf-8" });
     FileSaver.saveAs(blob, `refer.${new Date().getTime()}.json`);
   }
 }
