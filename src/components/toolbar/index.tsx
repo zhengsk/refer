@@ -5,14 +5,19 @@ import FullscreenTool from '../Tools/fullscreen';
 import ImportTool from '../Tools/import';
 import ExportTool from '../Tools/export';
 
-const Toolbar: React.FC = () => {
+interface ToolbarProps {
+  onImport: (jsonData: any) => void;
+  onExport: () => any;
+}
+
+const Toolbar: React.FC<ToolbarProps> = ({ onImport, onExport }) => {
   return (
     <div className={styles.toolbar}>
       <div className={styles.toolbarItem}>
-        <ImportTool />
+        <ImportTool onImport={onImport} />
       </div>
       <div className={styles.toolbarItem}>
-        <ExportTool />
+        <ExportTool onExport={onExport} />
       </div>
       <div className={styles.toolbarItem}>
         <FullscreenTool />

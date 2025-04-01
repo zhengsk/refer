@@ -6,6 +6,7 @@ import { saveAs, fileOpen } from '../utils/fileAccess';
 import styles from './index.module.less';
 import { useShortcut } from '../utils/useShortcut';
 import Toolbar from '../components/Toolbar';
+import ZoomTool from '../components/ZoomTool';
 
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
@@ -704,12 +705,13 @@ const ReferCanvas = () => {
       </div>
 
       {/* zoom */}
-      <div className={styles.zoom} onClick={zoomToggle}>
-        {`${Math.floor(zoom * 100)}%`}
-      </div>
+      <ZoomTool zoom={zoom} onZoomToggle={zoomToggle} />
 
       {/* 工具栏 */}
-      <Toolbar />
+      <Toolbar
+        onImport={(jsonData) => ReferRef.current?.loadJSON(jsonData)}
+        onExport={() => ReferRef.current?.exportJSON()}
+      />
     </div>
   )
 };
