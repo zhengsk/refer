@@ -1,15 +1,11 @@
-import { fabric } from 'fabric';
-import 'fabric-history'; // history https://www.npmjs.com/package/fabric-history
+import { ActiveSelection, Canvas as FabricCanvas, FabricImage, FabricObject, InteractiveFabricObject, IText, Point } from 'fabric';
+// import 'fabric-history'; // history https://www.npmjs.com/package/fabric-history
 import type {
-  ActiveSelection,
-  Canvas as FabricCanvas,
+  CanvasEvents,
+  FabricText,
   IImageOptions,
-  Image,
-  IText,
   ITextOptions,
-  Object,
-  Point,
-  Text,
+  TMat2D,
 } from 'fabric/fabric-impl';
 
 interface Canvas extends FabricCanvas {
@@ -25,10 +21,10 @@ export default class Refer {
   public textEditing: boolean;
   public textEditingElement: IText | undefined;
 
-  public preViewStatus: { zoom: number, panPoint: Point, element: Object } | undefined;
-  public clipboard: Object[] = [];
+  public preViewStatus: { zoom: number, panPoint: Point, element: FabricObject } | undefined;
+  public clipboard: FabricObject[] = [];
 
-  constructor(fabricCanvas: Canvas) {
+  constructor(fabricCanvas: FabricCanvas) {
     this.canvas = fabricCanvas;
     this.dragMode = false;
     this.dragging = false;
@@ -39,9 +35,11 @@ export default class Refer {
     this.bindTextEditingEvent(); // 绑定事件，判断是否处于文本编辑状态
   }
 
-  // Objeft default style
+  // Object default style
   private setDefaultStyle() {
-    fabric.Object.prototype.set({
+    InteractiveFabricObject.ownDefaults = {
+      ...InteractiveFabricObject.ownDefaults,
+
       transparentCorners: false,
 
       // border
@@ -63,7 +61,7 @@ export default class Refer {
         mt: false,
         mtr: false,
       }
-    });
+    };
   }
 
   getActiveObject() {
@@ -85,13 +83,13 @@ export default class Refer {
 
 
   // Get canvas view status：zoom and absolute pan value
-  setPreViewStatus(element: Object) {
+  setPreViewStatus(element: FabricObject) {
     const { canvas } = this;
     const zoom = canvas.getZoom();
     const vpCenter = canvas.getVpCenter();
     const center = canvas.getCenter();
 
-    const panPoint = new fabric.Point(
+    const panPoint = new Point(
       vpCenter.x * zoom - center.left,
       vpCenter.y * zoom - center.top
     );
@@ -107,7 +105,7 @@ export default class Refer {
   restorePreViewStatus() {
     if (this.preViewStatus) {
       const { zoom, panPoint } = this.preViewStatus;
-      this.canvas.zoomToPoint(new fabric.Point(-panPoint.x, -panPoint.y), zoom);
+      this.canvas.zoomToPoint(new Point(-panPoint.x, -panPoint.y), zoom);
       this.canvas.absolutePan(panPoint);
 
       this.preViewStatus = undefined;
@@ -120,13 +118,13 @@ export default class Refer {
     callback,
     saveState = true,
   }: {
-    element?: Object,
+    element?: FabricObject,
     callback?: () => {},
     saveState?: boolean,
   } = {}) {
     const { canvas } = this;
     canvas.renderAll();
-    const ele: Object = element || canvas.getActiveObject();
+    const ele: FabricObject = element || canvas.getActiveObject() as FabricObject;
 
     if (ele) {
       if (saveState) {
@@ -151,7 +149,7 @@ export default class Refer {
 
       const eleCenterPoint = ele.getCenterPoint();
 
-      const absolutePanSize = new fabric.Point(
+      const absolutePanSize = new Point(
         (eleCenterPoint.x) * zoom - canvasWidth / 2,
         (eleCenterPoint.y) * zoom - canvasHeight / 2
       );
@@ -165,7 +163,7 @@ export default class Refer {
       // canvas.relativePan(relativePanSize);
 
       const eleRect = ele.getBoundingRect();
-      const point = new fabric.Point(
+      const point = new Point(
         eleRect.left + eleRect.width / 2,
         eleRect.top + eleRect.height / 2
       );
@@ -175,13 +173,14 @@ export default class Refer {
     }
   }
 
-  addImgFromURL({ src, callback, imageOptions = {}, inVpCenter = false }: {
+  async addImgFromURL({ src, callback, imageOptions = {}, inVpCenter = false }: {
     src: string,
-    callback?: (img: Image) => void,
+    callback?: (img: FabricImage) => void,
     imageOptions?: IImageOptions,
     inVpCenter?: boolean,
   }) {
-    fabric.Image.fromURL(src, (oImg) => {
+    try {
+      const oImg = await FabricImage.fromURL(src, { crossOrigin: 'anonymous' }, imageOptions);
       if (inVpCenter) {
         const centerPoint = this.canvas.getVpCenter();
         oImg.left = centerPoint.x - (oImg.width || 0) / 2;
@@ -189,14 +188,16 @@ export default class Refer {
       }
       this.canvas.add(oImg);
       callback?.call(this, oImg);
-    }, imageOptions);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   // Add Text element
   addText(text: string = '', opts: ITextOptions = {
     fill: '#ed5e77',
-  }): Text {
-    var textEle = new fabric.IText(text, opts);
+  }): FabricText {
+    var textEle = new IText(text, opts);
     const centerPoint = this.canvas.getVpCenter();
 
     textEle.set({
@@ -208,11 +209,11 @@ export default class Refer {
     return textEle;
   }
 
-  addEventListener(eventName: string, callback: any) {
+  addEventListener(eventName: keyof CanvasEvents, callback: any) {
     this.canvas.on(eventName, callback);
   }
 
-  removeEventListener(eventName: string, callback: any) {
+  removeEventListener(eventName: keyof CanvasEvents, callback: any) {
     this.canvas.off(eventName, callback);
   }
 
@@ -227,9 +228,9 @@ export default class Refer {
     let oTransform: number[] = [];
     this.canvas.fireMiddleClick = true; // 启用中键
     this.canvas.on('mouse:down', (e) => {
-      if (this.dragMode || e.button === 2) {
+      if (this.dragMode || (e.e as MouseEvent).button === 2) {
         this.dragging = true;
-        if (e.pointer) {
+        if (e.viewportPoint) {
           oPoint = e.pointer;
         }
 
@@ -246,13 +247,13 @@ export default class Refer {
         this.canvas.setCursor('grab');
       }
 
-      if (this.dragging && e.pointer) {
-        const dx = e.pointer.x - oPoint?.x;
-        const dy = e.pointer.y - oPoint?.y;
+      if (this.dragging && e.viewportPoint) {
+        const dx = e.viewportPoint.x - oPoint?.x;
+        const dy = e.viewportPoint.y - oPoint?.y;
         const transform = [...oTransform]
         transform[4] += dx;
         transform[5] += dy;
-        this.canvas.setViewportTransform(transform);
+        this.canvas.setViewportTransform(transform as TMat2D);
 
         this.canvas.setCursor('grabbing');
       }
@@ -273,7 +274,7 @@ export default class Refer {
     const newTransform = oTransform ? [...oTransform] : [];
     newTransform[4] += dx;
     newTransform[5] += dy;
-    this.canvas.setViewportTransform(newTransform);
+    this.canvas.setViewportTransform(newTransform as TMat2D);
     return this;
   }
 
@@ -302,7 +303,7 @@ export default class Refer {
   }
 
   // Select element
-  selectElement(elements?: Object | Object[]): Object {
+  selectElement(elements?: FabricObject | FabricObject[]): FabricObject {
     this.canvas.discardActiveObject();
 
     if (!elements) {
@@ -311,14 +312,14 @@ export default class Refer {
       elements = [elements];
     }
 
-    const selection = new fabric.ActiveSelection(elements, { canvas: this.canvas });
+    const selection = new ActiveSelection(elements, { canvas: this.canvas });
     this.canvas.setActiveObject(selection);
     this.canvas.requestRenderAll();
     return selection;
   }
 
   // Delete element
-  deleteElement(elements?: Object | Object[]) {
+  deleteElement(elements?: FabricObject | FabricObject[]) {
     if (!elements) {
       elements = this.canvas.getActiveObjects();
     } else if (!Array.isArray(elements)) {
@@ -332,15 +333,15 @@ export default class Refer {
   }
 
   // Copy element to clipboard
-  copyElement(elements?: Object | Object[], event?: ClipboardEvent) {
+  copyElement(elements?: FabricObject | FabricObject[], event?: ClipboardEvent) {
     if (!elements) {
-      elements = [this.canvas.getActiveObject()];
+      elements = [this.canvas.getActiveObject() as FabricObject];
     } if (!Array.isArray(elements)) {
       elements = [elements];
     }
 
     this.clipboard = [];
-    elements.forEach(element => element.clone((cloned: Object) => {
+    elements.forEach(element => element.clone((cloned: FabricObject) => {
       this.clipboard.push(cloned);
     }));
 
@@ -350,7 +351,7 @@ export default class Refer {
   }
 
   // Paste clipboard element
-  pasteElement(elements?: Object | Object[]) {
+  pasteElement(elements?: FabricObject | FabricObject[]) {
     if (!elements) {
       elements = this.clipboard;
     } else if (!Array.isArray(elements)) {
@@ -362,7 +363,7 @@ export default class Refer {
       const zoom = this.canvas.getZoom();
       const offset = 20 / zoom;
 
-      ele.clone((newEle: Object) => {
+      ele.clone((newEle: FabricObject) => {
         newEle.set({
           left: (newEle.left as number) + offset,
           top: (newEle.top as number) + offset,
@@ -372,7 +373,7 @@ export default class Refer {
         if (newEle.type === 'activeSelection') {
           // active selection needs a reference to the canvas.
           newEle.canvas = this.canvas;
-          (newEle as ActiveSelection).forEachObject((ele: Object) => {
+          (newEle as ActiveSelection).forEachObject((ele: FabricObject) => {
             this.canvas.add(ele);
           });
           // this should solve the unselectability
@@ -390,17 +391,28 @@ export default class Refer {
     })
 
     this.clipboard = [];
-    elements.forEach(element => element.clone((cloned: Object) => {
+    elements.forEach(async (element) => {
+      const cloned = await element.clone();
       this.clipboard.push(cloned);
-    }))
+    });
   }
 
   // Bring to front
-  bringToFront(element?: Object) {
+  bringToFront(element?: FabricObject) {
     if (!element) {
       element = this.canvas.getActiveObject();
     }
     this.canvas.bringToFront(element);
+    this.canvas.requestRenderAll();
+  }
+
+  // Send to back
+  sendToBack(element?: FabricObject) {
+    if (!element) {
+      element = this.canvas.getActiveObject();
+    }
+    element?.sendToBack();
+    this.canvas.requestRenderAll();
   }
 
   dispose() {

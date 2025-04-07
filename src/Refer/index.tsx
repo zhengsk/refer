@@ -1,5 +1,6 @@
-import { fabric } from 'fabric';
-import type { IEvent, Point, Object, ActiveSelection } from 'fabric/fabric-impl';
+import { Canvas, Rect, Point } from 'fabric';
+import { initAligningGuidelines } from 'fabric/extensions';
+import type { TEvent, ActiveSelection, FabricObject } from 'fabric/fabric-impl';
 import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from './Refer';
 import { saveAs, fileOpen } from '../utils/fileAccess';
@@ -25,11 +26,18 @@ const ReferCanvas = () => {
 
   useEffect(() => {
     const options = { preserveObjectStacking: true };
-    const canvas = new fabric.Canvas(canvasEl.current, options);
+    const canvas = new Canvas(canvasEl.current, options);
     const Refer = new ReferCreator(canvas);
 
     ReferRef.current = Refer;
     (window as any).Refer = Refer;
+
+    // 添加对齐线
+    initAligningGuidelines(Refer.canvas, {
+      margin: 10,
+      color: '#00FF00',
+      width: 2,
+    });
 
     // 监听文本编辑状态, 添加到element上, 用户快捷键监听是判断是否处于文本编辑状态
     Refer.addEventListener('text:editing:entered', () => {
@@ -40,7 +48,7 @@ const ReferCanvas = () => {
     });
 
     // 添加一个红色矩形
-    var rect = new fabric.Rect({
+    const rect = new Rect({
       left: -100,
       top: -100,
       fill: 'red',
@@ -73,8 +81,8 @@ const ReferCanvas = () => {
   useEffect(() => {
     const Refer = ReferRef.current;
     if (Refer) {
-      Refer.addEventListener('mouse:wheel', (e: IEvent) => {
-        const event = e.e as WheelEvent;
+      Refer.addEventListener('mouse:wheel', (e: TEvent<WheelEvent> & { pointer: Point }) => {
+        const event = e.e;
         event.preventDefault();
         const zoom = Refer.getZoom();
 
@@ -88,7 +96,8 @@ const ReferCanvas = () => {
           }
 
           const newZoom = Math.min(100, Math.max(0.01, zoom * (1 - ratio)));
-          Refer.zoomToPoint(e.pointer as Point, newZoom);
+          debugger;
+          Refer.zoomToPoint(e.pointer, newZoom);
         } else { // 不按住ctrl键，滚动鼠标滚轮，移动画布
           // 滚动，移动画布
           let dx = -event.deltaX;
@@ -159,7 +168,7 @@ const ReferCanvas = () => {
   });
 
   // 元素自适应窗口展示切换
-  const switchFitViewElement = useCallback((element?: Object) => {
+  const switchFitViewElement = useCallback((element?: FabricObject) => {
     const Refer = ReferRef.current;
     if (Refer) {
       if (!element) {
@@ -180,7 +189,7 @@ const ReferCanvas = () => {
   useEffect(() => {
     const Refer = ReferRef.current;
     if (Refer) {
-      Refer.addEventListener('mouse:dblclick', (e: IEvent) => {
+      Refer.addEventListener('mouse:dblclick', (e: TEvent & { target: FabricObject }) => {
         if (e.target) {
           switchFitViewElement(e.target);
         }
@@ -346,8 +355,11 @@ const ReferCanvas = () => {
       Refer.fitViewElement({ element: ele, saveState: false });
       Refer.canvas.discardActiveObject();
 
-      const eles = activeEle.isType('activeSelection') ? (activeEle as ActiveSelection).getObjects() : activeEle;
-      Refer.selectElement(eles);
+      if (activeEle) {
+        debugger;
+        const eles = activeEle.isType('activeSelection') ? (activeEle as ActiveSelection).getObjects() : activeEle;
+        Refer.selectElement(eles);
+      }
     }
   }, []);
 
@@ -356,7 +368,7 @@ const ReferCanvas = () => {
     const Refer = ReferRef.current;
     if (Refer) {
       const centerPoint = Refer.canvas.getCenter();
-      let point = new fabric.Point(centerPoint.left, centerPoint.top);
+      let point = new Point(centerPoint.left, centerPoint.top);
       if (relative) {
         value = Refer.getZoom() * value;
       }
