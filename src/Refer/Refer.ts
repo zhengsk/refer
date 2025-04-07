@@ -2,7 +2,7 @@ import { fabric } from 'fabric';
 import 'fabric-history'; // history https://www.npmjs.com/package/fabric-history
 import type {
   ActiveSelection,
-  Canvas,
+  Canvas as FabricCanvas,
   IImageOptions,
   Image,
   IText,
@@ -12,11 +12,10 @@ import type {
   Text,
 } from 'fabric/fabric-impl';
 
-declare module 'fabric/fabric-impl' {
-  export interface Canvas {
-    undo(): void;
-    redo(): void;
-  }
+interface Canvas extends FabricCanvas {
+  undo(): void;
+  redo(): void;
+  wrapperEl: HTMLCanvasElement;
 }
 
 export default class Refer {
