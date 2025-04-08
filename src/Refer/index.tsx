@@ -96,7 +96,6 @@ const ReferCanvas = () => {
           }
 
           const newZoom = Math.min(100, Math.max(0.01, zoom * (1 - ratio)));
-          debugger;
           Refer.zoomToPoint(e.pointer, newZoom);
         } else { // 不按住ctrl键，滚动鼠标滚轮，移动画布
           // 滚动，移动画布
@@ -346,6 +345,7 @@ const ReferCanvas = () => {
 
   // 页面元素适配可视区域
   const allElementFitView = useCallback(() => {
+    debugger;
     const Refer = ReferRef.current;
     if (Refer) {
       const activeEle = Refer.getActiveObject();
@@ -356,9 +356,8 @@ const ReferCanvas = () => {
       Refer.canvas.discardActiveObject();
 
       if (activeEle) {
-        debugger;
-        const eles = activeEle.isType('activeSelection') ? (activeEle as ActiveSelection).getObjects() : activeEle;
-        Refer.selectElement(eles);
+        const elements = activeEle.isType('activeselection') ? (activeEle as ActiveSelection).getObjects() : activeEle;
+        Refer.selectElement(elements);
       }
     }
   }, []);
@@ -561,8 +560,7 @@ const ReferCanvas = () => {
     const Ref = ReferRef.current;
     if (Ref) {
       const bringToFront = () => {
-        const ele = Ref.getActiveObject();
-        Ref.bringToFront(ele);
+        Ref.bringToFront();
       }
       Ref.addEventListener('selection:created', bringToFront);
       Ref.addEventListener('selection:updated', bringToFront);

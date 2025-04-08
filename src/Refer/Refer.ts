@@ -7,7 +7,7 @@ import type {
   ITextOptions,
   TMat2D,
 } from 'fabric/fabric-impl';
-
+import { removeFromArray } from '../utils/tools';
 interface Canvas extends FabricCanvas {
   undo(): void;
   redo(): void;
@@ -180,7 +180,7 @@ export default class Refer {
     inVpCenter?: boolean,
   }) {
     try {
-      const oImg = await FabricImage.fromURL(src, { crossOrigin: 'anonymous' }, imageOptions);
+      const oImg = await FabricImage.fromURL(src, {}, imageOptions);
       if (inVpCenter) {
         const centerPoint = this.canvas.getVpCenter();
         oImg.left = centerPoint.x - (oImg.width || 0) / 2;
@@ -329,6 +329,7 @@ export default class Refer {
     elements.forEach(ele => {
       this.canvas.remove(ele);
     });
+
     this.canvas.discardActiveObject();
   }
 
@@ -397,13 +398,45 @@ export default class Refer {
     });
   }
 
+  // 设置画布的activeObject的层级
+  setElementIndex(index: number, element?: FabricObject) {
+    if (!element) {
+      element = this.canvas._activeObject;
+
+      if (!element) {
+        return this;
+      }
+    }
+
+    const activeSelection = this.canvas._activeObject;
+    if (element === activeSelection && element.type === 'activeselection') {
+      const objs = (element as ActiveSelection).getObjects();
+
+      // 移除元素
+      for (let i = 0; i < objs.length; i++) {
+        const obj = objs[i];
+        removeFromArray(this.canvas._objects, obj);
+      }
+
+      // 插入元素
+      this.canvas._objects.splice(index, 0, ...objs);
+    } else {
+      removeFromArray(this.canvas._objects, element);
+      this.canvas._objects.push(element);
+    }
+
+    this.canvas.requestRenderAll();
+    return this;
+  }
+
   // Bring to front
   bringToFront(element?: FabricObject) {
-    if (!element) {
-      element = this.canvas.getActiveObject();
-    }
-    this.canvas.bringToFront(element);
-    this.canvas.requestRenderAll();
+    this.setElementIndex(this.canvas._objects.length, element);
+  }
+
+  // Bring to back
+  bringToBack(element?: FabricObject) {
+    this.setElementIndex(0, element);
   }
 
   // Send to back
@@ -411,7 +444,7 @@ export default class Refer {
     if (!element) {
       element = this.canvas.getActiveObject();
     }
-    element?.sendToBack();
+    // element?.sendToBack();
     this.canvas.requestRenderAll();
   }
 

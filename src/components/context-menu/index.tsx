@@ -63,6 +63,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 
         return (
           <div
+            key={index}
             className={`${styles.menuItem} ${item.disabled ? styles.disabled : ''}`}
             onClick={() => {
               if (!item.disabled) {
