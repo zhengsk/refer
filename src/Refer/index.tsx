@@ -6,13 +6,15 @@ import { saveAs, fileOpen } from '../utils/fileAccess';
 import styles from './index.module.less';
 import { useShortcut } from '../utils/useShortcut';
 import Toolbar from '../components/Toolbar';
-import ZoomTool from '../components/ZoomTool';
+import ZoomTool from '../components/Zoom/ZoomTool';
+import Ruler from '../components/Ruler';
 
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
 
 const ReferCanvas = () => {
   const ReferRef = useRef<ReferCreator>();
+  const [Refer, setRefer] = useState<ReferCreator | null>(null);
   const canvasEl = useRef<HTMLCanvasElement | null>(null);
   const [zoom, setZoom] = useState(1);
   // const {isFitviewMode, setIsFitViewMode} = useState(false);
@@ -23,7 +25,7 @@ const ReferCanvas = () => {
     const canvas = new fabric.Canvas(canvasEl.current, options);
     const Refer = new ReferCreator(canvas);
 
-    ReferRef.current = Refer;
+    setRefer(Refer);
     (window as any).Refer = Refer;
 
     // 监听文本编辑状态, 添加到element上, 用户快捷键监听是判断是否处于文本编辑状态
@@ -66,7 +68,6 @@ const ReferCanvas = () => {
 
   // 鼠标滚动缩放或移动画布
   useEffect(() => {
-    const Refer = ReferRef.current;
     if (Refer) {
       Refer.addEventListener('mouse:wheel', (e: IEvent) => {
         const event = e.e as WheelEvent;
@@ -100,7 +101,7 @@ const ReferCanvas = () => {
         }
       });
     }
-  }, []);
+  }, [Refer]);
 
   // 移动画布: 空格键 或 鼠标中间
   useEffect(() => {
@@ -110,17 +111,17 @@ const ReferCanvas = () => {
 
       const keydownAction = (e: KeyboardEvent | MouseEvent) => {
         if ((e as KeyboardEvent).key === ' ' || (e as MouseEvent).button === 1) {
-          if (ReferRef.current && !ReferRef.current.dragMode) {
+          if (Refer && !Refer.dragMode) {
             e.preventDefault();
-            ReferRef.current.setDragMode(true);
+            Refer.setDragMode(true);
           }
         }
       }
 
       const keyupAction = (e: KeyboardEvent | MouseEvent) => {
         if ((e as KeyboardEvent).key === ' ' || (e as MouseEvent).button === 1) {
-          if (ReferRef.current) {
-            ReferRef.current.setDragMode(false);
+          if (Refer) {
+            Refer.setDragMode(false);
           }
         }
       }
@@ -139,15 +140,15 @@ const ReferCanvas = () => {
         ownerDocument.removeEventListener('mouseup', keyupAction);
       }
     }
-  }, []);
+  }, [Refer]);
 
   // 键盘：删除选中元素 Delete、Backspace
   useShortcut({
     keys: ['Delete', 'Backspace'],
     callback: (e: KeyboardEvent) => {
       e.preventDefault();
-      if (ReferRef.current) {
-        ReferRef.current.deleteElement();
+      if (Refer) {
+        Refer.deleteElement();
       }
     },
     element,
@@ -155,7 +156,6 @@ const ReferCanvas = () => {
 
   // 元素自适应窗口展示切换
   const switchFitViewElement = useCallback((element?: Object) => {
-    const Refer = ReferRef.current;
     if (Refer) {
       if (!element) {
         element = Refer.getActiveObject();
@@ -169,11 +169,10 @@ const ReferCanvas = () => {
         Refer.restorePreViewStatus();
       }
     }
-  }, []);
+  }, [Refer]);
 
   // 双击自适应窗口
   useEffect(() => {
-    const Refer = ReferRef.current;
     if (Refer) {
       Refer.addEventListener('mouse:dblclick', (e: IEvent) => {
         if (e.target) {
@@ -181,12 +180,11 @@ const ReferCanvas = () => {
         }
       });
     }
-  }, []);
+  }, [Refer]);
 
   // 拖拽或粘贴对象（dataTransfer）到画布
   const addFromDataTransfer = useCallback((DataTransferItemList: DataTransferItemList | undefined, event?: DragEvent) => {
 
-    const Refer = ReferRef.current;
     const addedElements: (Promise<Object | undefined> | Promise<(Object | undefined)[]>)[] = [];
 
 
@@ -328,11 +326,10 @@ const ReferCanvas = () => {
         return acc;
       }, []);
     });
-  }, []);
+  }, [Refer]);
 
   // 页面元素适配可视区域
   const allElementFitView = useCallback(() => {
-    const Refer = ReferRef.current;
     if (Refer) {
       const activeEle = Refer.getActiveObject();
       Refer.canvas.discardActiveObject();
@@ -344,11 +341,10 @@ const ReferCanvas = () => {
       const eles = activeEle.isType('activeSelection') ? (activeEle as ActiveSelection).getObjects() : activeEle;
       Refer.selectElement(eles);
     }
-  }, []);
+  }, [Refer]);
 
   // 画布100%展示，以中心区域缩放
   const zoomCenterTo = useCallback((value = 1, relative = false) => {
-    const Refer = ReferRef.current;
     if (Refer) {
       const centerPoint = Refer.canvas.getCenter();
       let point = new fabric.Point(centerPoint.left, centerPoint.top);
@@ -358,12 +354,10 @@ const ReferCanvas = () => {
       const zoom = Math.min(100, Math.max(0.01, value));
       Refer.zoomToPoint(point, zoom);
     }
-  }, []);
+  }, [Refer]);
 
   // 拖拽本地文件到画布
   useEffect(() => {
-    const Refer = ReferRef.current;
-
     if (Refer) {
       const dropAction = (event: IEvent) => {
         const originEvent = event.e as DragEvent;
@@ -397,17 +391,17 @@ const ReferCanvas = () => {
         Refer.removeEventListener('drop', dropAction);
       }
     }
-  }, []);
+  }, [Refer]);
 
   // 复制画布的内容
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
       const copyAction = (e: ClipboardEvent) => {
-        if (ReferRef.current) {
-          if (ReferRef.current.getActiveObject()) {
+        if (Refer) {
+          if (Refer.getActiveObject()) {
             e.preventDefault();
-            ReferRef.current.copyElement(undefined, e);
+            Refer.copyElement(undefined, e);
           }
         }
       };
@@ -420,7 +414,7 @@ const ReferCanvas = () => {
       }
     }
 
-  }, []);
+  }, [Refer]);
 
   // 粘贴内容到画布
   useEffect(() => {
@@ -432,10 +426,10 @@ const ReferCanvas = () => {
         // 粘贴系统剪贴板内容
         addFromDataTransfer(e.clipboardData?.items).then(eles => {
           if (eles.length) {
-            ReferRef.current?.selectElement(eles);
+            Refer?.selectElement(eles);
           } else {
             // 系统剪贴板没粘贴内容，则粘贴画布剪贴板内容
-            ReferRef.current?.pasteElement();
+            Refer?.pasteElement();
           }
         });
       };
@@ -448,15 +442,15 @@ const ReferCanvas = () => {
       }
     }
 
-  }, []);
+  }, [Refer]);
 
   // 键盘 Command + A：全选
   useShortcut({
     keys: ['meta+a', 'ctrl+a'],
     callback: (e: KeyboardEvent) => {
       e.preventDefault();
-      if (ReferRef.current) {
-        ReferRef.current.selectElement();
+      if (Refer) {
+        Refer.selectElement();
       }
     },
     element,
@@ -475,7 +469,6 @@ const ReferCanvas = () => {
   useShortcut({
     keys: ['g', 'G', 'ArrowLeft', 'ArrowRight'],
     callback: (e: KeyboardEvent) => {
-      const Refer = ReferRef.current;
       if (Refer) {
         let currentElement = Refer.preViewStatus?.element || Refer.canvas.getActiveObject();
         const allElements = Refer.canvas.getObjects();
@@ -531,7 +524,6 @@ const ReferCanvas = () => {
     keys: ['meta+z', 'meta+shift+z', 'ctrl+z', 'ctrl+shift+z'],
     callback: (e: KeyboardEvent) => {
       e.preventDefault();
-      const Refer = ReferRef.current;
       if (Refer) {
         e.shiftKey ? Refer?.redo() : Refer?.undo();
       }
@@ -541,14 +533,13 @@ const ReferCanvas = () => {
 
   // 选中元素直接移到最前面
   useEffect(() => {
-    const Ref = ReferRef.current;
-    if (Ref) {
+    if (Refer) {
       const bringToFront = () => {
-        const ele = Ref.getActiveObject();
-        Ref.bringToFront(ele);
+        const ele = Refer.getActiveObject();
+        Refer.bringToFront(ele);
       }
-      Ref.addEventListener('selection:created', bringToFront);
-      Ref.addEventListener('selection:updated', bringToFront);
+      Refer.addEventListener('selection:created', bringToFront);
+      Refer.addEventListener('selection:updated', bringToFront);
     }
   }, []);
 
@@ -557,8 +548,8 @@ const ReferCanvas = () => {
     keys: ['meta+shift+c', 'ctrl+shift+c'],
     callback: async (e: KeyboardEvent) => {
       e.preventDefault();
-      if (ReferRef.current) {
-        const elements = ReferRef.current.getActiveObject();
+      if (Refer) {
+        const elements = Refer.getActiveObject();
         const imageDataURL = elements.toDataURL({ format: 'png' });
 
         const res = await fetch(imageDataURL);
@@ -581,8 +572,8 @@ const ReferCanvas = () => {
 
       const keydownAction = async (e: KeyboardEvent) => {
         if (e.key === 's' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
-          if (ReferRef.current) {
-            const jsonData = ReferRef.current.exportJSON();
+          if (Refer) {
+            const jsonData = Refer.exportJSON();
             saveAs({ dataStr: JSON.stringify(jsonData, null, 4) });
           }
         }
@@ -600,14 +591,14 @@ const ReferCanvas = () => {
     keys: ['meta+o', 'ctrl+o'],
     callback: async (e: KeyboardEvent) => {
       e.preventDefault();
-      if (ReferRef.current) {
+      if (Refer) {
         const file = await fileOpen({
           mimeTypes: ['application/json'],
         });
         const jsonStr = await file.text();
         try {
           const jsonData = JSON.parse(jsonStr);
-          return ReferRef.current.loadJSON(jsonData);
+          return Refer.loadJSON(jsonData);
         } catch {
           // Do nothing
         }
@@ -618,23 +609,21 @@ const ReferCanvas = () => {
 
   // 画布大小变化
   useEffect(() => {
-    const Ref = ReferRef.current;
-    if (Ref) {
+    if (Refer) {
       window.addEventListener('resize', function () {
-        const canvas = Ref.canvas;
+        const canvas = Refer.canvas;
         canvas.setWidth(document.documentElement.clientWidth);
         canvas.setHeight(document.documentElement.clientHeight);
         canvas.requestRenderAll();
         canvas.calcOffset();
       }, { passive: true });
     }
-  }, []);
+  }, [Refer]);
 
   // 画布缩放设置 zoom
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
-      const Refer = ReferRef.current;
       if (Refer) {
         const action = (e: any) => {
           const zoom = Refer.getZoom();
@@ -648,11 +637,10 @@ const ReferCanvas = () => {
         }
       }
     }
-  }, []);
+  }, [Refer]);
 
   // 切换100%展示和内容自适应窗口
   const zoomToggle = useCallback(() => {
-    const Refer = ReferRef.current;
     if (Refer) {
       const zoom = Refer.getZoom();
       if (zoom !== 1) {
@@ -661,11 +649,10 @@ const ReferCanvas = () => {
         allElementFitView();
       }
     }
-  }, []);
+  }, [Refer]);
 
   // 添加文本
   const addText = useCallback(() => {
-    const Refer = ReferRef.current;
     if (Refer) {
       const zoom = Refer.getZoom();
       const fontSize = 50 / zoom;
@@ -675,7 +662,7 @@ const ReferCanvas = () => {
         fontSize,
       });
     }
-  }, []);
+  }, [Refer]);
 
   // 键盘：添加文本 T
   useShortcut({
@@ -691,6 +678,14 @@ const ReferCanvas = () => {
         height={vh}
         ref={canvasEl}
       />
+      {/* Ruler */}
+      {Refer && (
+        <Ruler
+          canvas={Refer.canvas}
+          width={vw}
+          height={vh}
+        />
+      )}
       {/* Logo */}
       <div className={styles.logo}>
         <a href='https://huaban.com'>
@@ -709,8 +704,8 @@ const ReferCanvas = () => {
 
       {/* 工具栏 */}
       <Toolbar
-        onImport={(jsonData) => ReferRef.current?.loadJSON(jsonData)}
-        onExport={() => ReferRef.current?.exportJSON()}
+        onImport={(jsonData) => Refer?.loadJSON(jsonData)}
+        onExport={() => Refer?.exportJSON()}
       />
     </div>
   )

@@ -25,6 +25,8 @@ export default class Refer {
   public dragging: boolean;
   public textEditing: boolean;
   public textEditingElement: IText | undefined;
+  public rulerEnabled: boolean = false;
+  public rulerUnit: number = 1;
 
   public preViewStatus: { zoom: number, panPoint: Point, element: Object } | undefined;
   public clipboard: Object[] = [];
@@ -429,5 +431,108 @@ export default class Refer {
     return new Promise((resolve, reject) => {
       this.canvas.loadFromJSON(jsonData, resolve);
     });
+  }
+
+  // 对齐元素
+  alignElements(alignType: 'top' | 'bottom' | 'center' | 'left' | 'right' | 'middle' | 'distribute-h' | 'distribute-v') {
+    const activeObject = this.canvas.getActiveObject();
+    if (!activeObject || !(activeObject instanceof fabric.ActiveSelection)) {
+      return;
+    }
+
+    const objects = (activeObject as fabric.ActiveSelection).getObjects();
+    if (objects.length < 2) return;
+
+    const bounds = activeObject.getBoundingRect();
+    const totalWidth = bounds.width;
+    const totalHeight = bounds.height;
+    const left = bounds.left;
+    const top = bounds.top;
+
+    debugger;
+
+    switch (alignType) {
+      case 'top':
+        objects.forEach(obj => {
+          obj.set('top', top);
+        });
+        break;
+
+      case 'bottom':
+        objects.forEach(obj => {
+          const objBounds = obj.getBoundingRect();
+          obj.set('top', top + totalHeight - objBounds.height);
+        });
+        break;
+
+      case 'center':
+        objects.forEach(obj => {
+          const objBounds = obj.getBoundingRect();
+          obj.set('left', left + (totalWidth - objBounds.width) / 2);
+        });
+        break;
+
+      case 'left':
+        objects.forEach(obj => {
+          obj.set('left', left);
+        });
+        break;
+
+      case 'right':
+        objects.forEach(obj => {
+          const objBounds = obj.getBoundingRect();
+          obj.set('left', left + totalWidth - objBounds.width);
+        });
+        break;
+
+      case 'middle':
+        objects.forEach(obj => {
+          const objBounds = obj.getBoundingRect();
+          obj.set('top', top + (totalHeight - objBounds.height) / 2);
+        });
+        break;
+
+      case 'distribute-h':
+        const sortedObjects = [...objects].sort((a, b) => a.left! - b.left!);
+        const firstObj = sortedObjects[0];
+        const lastObj = sortedObjects[sortedObjects.length - 1];
+        const totalSpace = lastObj.left! - firstObj.left!;
+        const spacing = totalSpace / (sortedObjects.length - 1);
+
+        sortedObjects.forEach((obj, index) => {
+          if (index !== 0 && index !== sortedObjects.length - 1) {
+            obj.set('left', firstObj.left! + spacing * index);
+          }
+        });
+        break;
+
+      case 'distribute-v':
+        const sortedObjectsV = [...objects].sort((a, b) => a.top! - b.top!);
+        const firstObjV = sortedObjectsV[0];
+        const lastObjV = sortedObjectsV[sortedObjectsV.length - 1];
+        const totalSpaceV = lastObjV.top! - firstObjV.top!;
+        const spacingV = totalSpaceV / (sortedObjectsV.length - 1);
+
+        sortedObjectsV.forEach((obj, index) => {
+          if (index !== 0 && index !== sortedObjectsV.length - 1) {
+            obj.set('top', firstObjV.top! + spacingV * index);
+          }
+        });
+        break;
+    }
+
+    this.canvas.requestRenderAll();
+  }
+
+  // 设置标尺单位
+  setRulerUnit(unit: number) {
+    this.rulerUnit = unit;
+    this.canvas.fire('ruler:unit:changed', { unit });
+  }
+
+  // 启用/禁用标尺
+  setRulerEnabled(enabled: boolean) {
+    this.rulerEnabled = enabled;
+    this.canvas.fire('ruler:enabled:changed', { enabled });
   }
 }
