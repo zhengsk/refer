@@ -227,11 +227,12 @@ export default class Refer {
     let oPoint: Point;
     let oTransform: number[] = [];
     this.canvas.fireMiddleClick = true; // 启用中键
+
     this.canvas.on('mouse:down', (e) => {
-      if (this.dragMode || (e.e as MouseEvent).button === 2) {
+      if (this.dragMode || (e.e as MouseEvent).button === 1) {
         this.dragging = true;
         if (e.viewportPoint) {
-          oPoint = e.pointer;
+          oPoint = e.viewportPoint;
         }
 
         if (this.canvas.viewportTransform) {
