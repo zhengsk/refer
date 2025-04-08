@@ -11,10 +11,9 @@ import Icon from '../../Icons';
 import Tooltip from '../../Tooltip';
 import styles from './index.module.less';
 
-const ExportTool: React.FC = () => {
+const ExportTool: React.FC<{ callback: () => void }> = ({ callback }) => {
   const handleExport = () => {
-    // TODO: 实现导出功能
-    console.log('导出功能待实现');
+    callback();
   };
 
   return (

@@ -2,7 +2,7 @@ import { Canvas, Rect, Point } from 'fabric';
 import { initAligningGuidelines } from 'fabric/extensions';
 import type { TEvent, ActiveSelection, FabricObject } from 'fabric/fabric-impl';
 import { useRef, useEffect, useState, useCallback } from 'react'
-import ReferCreator from './Refer';
+import ReferCreator from '../ReferCreator';
 import { saveAs, fileOpen } from '../utils/fileAccess';
 import styles from './index.module.less';
 import { useShortcut } from '../utils/useShortcut';
@@ -588,44 +588,47 @@ const ReferCanvas = () => {
     element,
   });
 
-  // 键盘：Save Command + shift + S
-  useEffect(() => {
-    const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const ownerDocument = canvasDom.ownerDocument;
+  // 导出 refer 文件
+  const exportRefer = useCallback(async () => {
+    if (ReferRef.current) {
+      const jsonData = ReferRef.current.exportJSON();
+      saveAs({ dataStr: JSON.stringify(jsonData, null, 4) });
+    }
+  }, []);
 
-      const keydownAction = async (e: KeyboardEvent) => {
-        if (e.key === 's' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
-          if (ReferRef.current) {
-            const jsonData = ReferRef.current.exportJSON();
-            saveAs({ dataStr: JSON.stringify(jsonData, null, 4) });
-          }
-        }
-      }
-      ownerDocument.addEventListener('keydown', keydownAction);
+  // 键盘：Save Command + S
+  useShortcut({
+    keys: ['meta+s', 'ctrl+s'],
+    callback: async (e: KeyboardEvent) => {
+      e.preventDefault();
+      exportRefer();
+    },
+    element,
+  });
 
-      return () => {
-        ownerDocument.removeEventListener('keydown', keydownAction);
+  // 导入 refer 文件
+  const importRefer = useCallback(async () => {
+    if (ReferRef.current) {
+      const file = await fileOpen({
+        mimeTypes: ['application/json'],
+      });
+      try {
+        const jsonStr = await file.text();
+        const jsonData = JSON.parse(jsonStr);
+        return ReferRef.current.loadJSON(jsonData);
+      } catch {
+        // Do nothing
       }
     }
   }, []);
 
-  // 键盘：Open Command + O
+  // 键盘：Open Command + o
   useShortcut({
     keys: ['meta+o', 'ctrl+o'],
     callback: async (e: KeyboardEvent) => {
       e.preventDefault();
       if (ReferRef.current) {
-        const file = await fileOpen({
-          mimeTypes: ['application/json'],
-        });
-        const jsonStr = await file.text();
-        try {
-          const jsonData = JSON.parse(jsonStr);
-          return ReferRef.current.loadJSON(jsonData);
-        } catch {
-          // Do nothing
-        }
+        importRefer();
       }
     },
     element,
@@ -817,7 +820,10 @@ const ReferCanvas = () => {
       </div>
 
       {/* 工具栏 */}
-      <Toolbar />
+      <Toolbar
+        importRefer={importRefer}
+        exportRefer={exportRefer}
+      />
 
       {/* 添加右键菜单 */}
       <ContextMenu
