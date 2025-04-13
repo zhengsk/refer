@@ -381,8 +381,7 @@ const ReferCanvas = () => {
     const Refer = ReferRef.current;
 
     if (Refer) {
-      const dropAction = (event: IEvent) => {
-        const originEvent = event.e as DragEvent;
+      const dropAction = (originEvent: DragEvent) => {
         originEvent.preventDefault();
 
         const items = originEvent.dataTransfer?.items;
@@ -407,10 +406,17 @@ const ReferCanvas = () => {
         }
       }
 
-      Refer.addEventListener('drop', dropAction);
+      const dragoverAction = (event: DragEvent) => {
+        event.preventDefault();
+      }
+
+      //必须在 dragover 事件中调用 event.preventDefault()，否则 drop 事件不会触发。
+      document.addEventListener('dragover', dragoverAction);
+      document.body.addEventListener('drop', dropAction);
 
       return () => {
-        Refer.removeEventListener('drop', dropAction);
+        document.body.removeEventListener('drop', dropAction);
+        document.removeEventListener('dragover', dragoverAction);
       }
     }
   }, []);

@@ -335,7 +335,7 @@ export default class Refer {
   }
 
   // Copy element to clipboard
-  copyElement(elements?: FabricObject | FabricObject[], event?: ClipboardEvent) {
+  async copyElement(elements?: FabricObject | FabricObject[], event?: ClipboardEvent) {
     if (!elements) {
       elements = [this.canvas.getActiveObject() as FabricObject];
     } if (!Array.isArray(elements)) {
@@ -343,13 +343,14 @@ export default class Refer {
     }
 
     this.clipboard = [];
-    elements.forEach(element => element.clone((cloned: FabricObject) => {
-      this.clipboard.push(cloned);
-    }));
+    const cloned = await Promise.all(elements.map(element => element.clone()));
+    this.clipboard.push(...cloned);
 
     if (event) {
       event.clipboardData?.setData('text/plain', '');
     }
+
+    return cloned;
   }
 
   // Paste clipboard element
@@ -365,16 +366,14 @@ export default class Refer {
       const zoom = this.canvas.getZoom();
       const offset = 20 / zoom;
 
-      ele.clone((newEle: FabricObject) => {
+      ele.clone().then((newEle: FabricObject) => {
         newEle.set({
           left: (newEle.left as number) + offset,
           top: (newEle.top as number) + offset,
-          evented: true,
         });
 
-        if (newEle.type === 'activeSelection') {
+        if (newEle.type === 'activeselection') {
           // active selection needs a reference to the canvas.
-          newEle.canvas = this.canvas;
           (newEle as ActiveSelection).forEachObject((ele: FabricObject) => {
             this.canvas.add(ele);
           });
