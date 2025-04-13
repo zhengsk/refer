@@ -173,7 +173,12 @@ export default class Refer {
     }
   }
 
-  async addImgFromURL({ src, callback, imageOptions = {}, inVpCenter = false }: {
+  async addImgFromURL({
+    src,
+    callback,
+    imageOptions = {},
+    inVpCenter = false,
+  }: {
     src: string,
     callback?: (img: FabricImage) => void,
     imageOptions?: IImageOptions,

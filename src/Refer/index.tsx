@@ -1,6 +1,6 @@
-import { Canvas, Rect, Point } from 'fabric';
+import { Canvas, Rect, Point, FabricImage, FabricText, ActiveSelection } from 'fabric';
 import { initAligningGuidelines } from 'fabric/extensions';
-import type { TEvent, ActiveSelection, FabricObject } from 'fabric/fabric-impl';
+import type { TEvent, FabricObject } from 'fabric/fabric-impl';
 import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from '../ReferCreator';
 import { saveAs, fileOpen } from '../utils/fileAccess';
@@ -200,7 +200,7 @@ const ReferCanvas = () => {
   const addFromDataTransfer = useCallback((DataTransferItemList: DataTransferItemList | undefined, event?: DragEvent) => {
 
     const Refer = ReferRef.current;
-    const addedElements: (Promise<Object | undefined> | Promise<(Object | undefined)[]>)[] = [];
+    const addedElements: (Promise<FabricObject | undefined> | Promise<(FabricObject | undefined)[]>)[] = [];
 
 
     if (Refer) {
@@ -211,7 +211,7 @@ const ReferCanvas = () => {
       // Position to event point
       if (event) {
         inVpCenter = false;
-        const pointer = Refer.canvas.getPointer(event);
+        const pointer = Refer.canvas.getScenePoint(event);
         offsetPoint.setXY(pointer.x, pointer.y);
       }
 
@@ -223,19 +223,20 @@ const ReferCanvas = () => {
       // When has HTML then skip file type
       const hasHtml = [...items].some(item => item.type.match('^text/html'));
 
+      debugger;
       for (let i = 0; i < items.length; i += 1) {
         const item = items[i];
         if ((item.kind === 'string') && (item.type.match('^text/plain'))) {
           // Add Text node
-          const newElePromise = new Promise<Object | undefined>((resolve) => {
+          const newElePromise = new Promise<FabricObject | undefined>((resolve) => {
             item.getAsString((data) => {
-              const newEle = Refer.addText(data);
+              const newEle = new FabricText(data);
               resolve(newEle);
             })
           });
           addedElements.push(newElePromise);
         } else if ((item.kind === 'string') && (item.type.match('^text/html'))) {
-          const htmlPromise = new Promise<Array<Object | undefined>>((resolve) => {
+          const htmlPromise = new Promise<Array<FabricObject | undefined>>((resolve) => {
             // Get image from html
             item.getAsString(html => {
               const div = document.createElement('div');
@@ -245,18 +246,38 @@ const ReferCanvas = () => {
               const imgsPromise = [...imgs].map(img => {
                 if (!appendedMap[img.src]) {
                   let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
-
                   appendedMap[img.src] = true;
                   appendLength += 1;
 
-                  // TODO: Get Large image src OR srcset
-                  return new Promise<Object>(resolve => {
-                    Refer.addImgFromURL({
-                      src: img.src,
-                      callback: (ele) => { resolve(ele); },
-                      imageOptions: { left: offset.x, top: offset.y, },
-                      inVpCenter,
-                    });
+                  return new Promise<FabricObject | undefined>((resolve) => {
+                    const newImg = new Image();
+                    newImg.onload = function () {
+                      // 图片显示高度为300px
+                      const imageHeight = 300;
+                      const scale = imageHeight / newImg.height;
+                      const imageWidth = newImg.width * scale;
+
+                      const renderWidth = imageWidth / zoom;
+                      const renderHeight = imageHeight / zoom;
+
+                      const imageSrc = img.src;
+                      const imageOptions = {
+                        scaleX: scale / zoom,
+                        scaleY: scale / zoom,
+                        left: offsetPoint.x - renderWidth / 2,
+                        top: offsetPoint.y - renderHeight / 2,
+                      };
+
+                      FabricImage.fromURL(imageSrc, {}, imageOptions)
+                        .then((imageObject) => {
+                          debugger;
+                          resolve(imageObject);
+                        }).catch(() => {
+                          debugger;
+                          resolve(undefined);
+                        });
+                    };
+                    newImg.src = img.src;
                   });
                 }
               });
@@ -266,20 +287,27 @@ const ReferCanvas = () => {
           });
           addedElements.push(htmlPromise);
         } else if ((item.kind === 'string') && (item.type.match('^text/uri-list'))) {
-          const newElePromise = new Promise<Object | undefined>((resolve) => {
+          const newElePromise = new Promise<FabricObject | undefined>((resolve) => {
             // url
             item.getAsString(src => {
               if (!appendedMap[src]) {
-                let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
-                Refer.addImgFromURL({
-                  src,
-                  callback: (ele) => { resolve(ele); },
-                  imageOptions: { left: offset.x, top: offset.y, },
-                  inVpCenter,
-                });
-
                 appendedMap[src] = true;
                 appendLength += 1;
+
+                const imageOptions = {
+                  left: offsetPoint.x,
+                  top: offsetPoint.y,
+                };
+
+                const newImg = new Image();
+                newImg.onload = function () {
+                  FabricImage.fromURL(src, {}, imageOptions).then((imageObject) => {
+                    resolve(imageObject);
+                  }).catch(() => {
+                    resolve(undefined);
+                  });
+                };
+                newImg.src = src;
               }
             });
           });
@@ -291,8 +319,8 @@ const ReferCanvas = () => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
 
-            const waitForLoad: Promise<Object> = new Promise((resolve) => {
-              let offset = offsetPoint.scalarAdd(appendLength * 20 / zoom);
+            const waitForLoad: Promise<FabricObject> = new Promise((resolve) => {
+              let offset = offsetPoint;
               reader.addEventListener('load', () => {
                 const zoom = Refer.getZoom();
 
@@ -306,20 +334,20 @@ const ReferCanvas = () => {
                   const renderWidth = imageWidth / zoom;
                   const renderHeight = imageHeight / zoom;
 
-                  Refer.addImgFromURL({
-                    src: reader.result as string,
-                    callback: (ele) => { resolve(ele); },
-                    imageOptions: {
-                      scaleX: scale / zoom,
-                      scaleY: scale / zoom,
-                      left: offset.x - renderWidth / 2,
-                      top: offset.y - renderHeight / 2,
-                    },
-                    inVpCenter,
-                  });
+                  const imageSrc = reader.result as string;
+                  const imageOptions = {
+                    scaleX: scale / zoom,
+                    scaleY: scale / zoom,
+                    left: offset.x - renderWidth / 2,
+                    top: offset.y - renderHeight / 2,
+                  };
+
+                  FabricImage.fromURL(imageSrc, {}, imageOptions)
+                    .then((imageObject) => {
+                      resolve(imageObject);
+                    });
                 };
                 img.src = reader.result as string;
-
               });
             });
 
@@ -328,24 +356,42 @@ const ReferCanvas = () => {
           }
         }
       }
-    }
 
-    return Promise.all(addedElements).then(elements => {
-      return elements.reduce((acc: Object[], item) => {
-        if (Array.isArray(item)) {
-          const newEles: Object[] = item.filter(ele => ele) as Object[];
-          Array.prototype.push.apply(acc, newEles);
-        } else if (item !== undefined) {
-          acc.push(item);
-        }
-        return acc;
-      }, []);
-    });
+      return Promise.all(addedElements).then(elements => {
+        // 多维数组，需要扁平化
+        const flatElements = elements.flat();
+        const newElements = flatElements.reduce((acc: FabricObject[], item, index) => {
+          if (Array.isArray(item)) {
+            const newElements = item.filter(ele => ele);
+            Array.prototype.push.apply(acc, newElements);
+          } else if (item !== undefined) {
+            if (acc.length > 0) {
+              const prevEle = acc[acc.length - 1];
+              const prevLeft = prevEle.get('left');
+              const prevWidth = prevEle.getScaledWidth();
+              const newLeft = prevLeft + prevWidth + 20;
+
+              // 重新设置元素的 left 位置
+              item.set('left', newLeft);
+            }
+
+            acc.push(item);
+          }
+          return acc;
+        }, []);
+
+        const selection = new ActiveSelection([...newElements]);
+
+        const offset = selection.getScaledWidth() / 2;
+        selection.set('left', offsetPoint.x - offset);
+
+        return selection;
+      });
+    }
   }, []);
 
   // 页面元素适配可视区域
   const allElementFitView = useCallback(() => {
-    debugger;
     const Refer = ReferRef.current;
     if (Refer) {
       const activeEle = Refer.getActiveObject();
@@ -392,7 +438,9 @@ const ReferCanvas = () => {
             textStr?.then(str => {
               try {
                 const json = JSON.parse(str);
-                return Refer.loadJSON(json)
+                return Refer.loadJSON(json).then(() => {
+                  Refer.canvas.requestRenderAll();
+                })
               } catch {
                 // Do nothing;
               }
@@ -401,7 +449,7 @@ const ReferCanvas = () => {
 
           addFromDataTransfer(items, originEvent)
             .then((eles) => {
-              Refer.selectElement(eles);
+              Refer.canvas.setActiveObject(eles);
             });
         }
       }
