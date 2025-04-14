@@ -1,6 +1,6 @@
 import { Canvas, Rect, Point, FabricImage, FabricText, ActiveSelection } from 'fabric';
 import { initAligningGuidelines } from 'fabric/extensions';
-import type { TEvent, FabricObject } from 'fabric/fabric-impl';
+import type { TEvent, FabricObject, TPointerEvent } from 'fabric/fabric-impl';
 import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from '../ReferCreator';
 import { saveAs, fileOpen } from '../utils/fileAccess';
@@ -197,7 +197,7 @@ const ReferCanvas = () => {
   }, []);
 
   // 拖拽或粘贴对象（dataTransfer）到画布
-  const addFromDataTransfer = useCallback((DataTransferItemList: DataTransferItemList | undefined, event?: DragEvent) => {
+  const addFromDataTransfer = useCallback((DataTransferItemList: DataTransferItemList, event?: DragEvent | ClipboardEvent) => {
 
     const Refer = ReferRef.current;
     const addedElements: (Promise<FabricObject | undefined> | Promise<(FabricObject | undefined)[]>)[] = [];
@@ -211,7 +211,7 @@ const ReferCanvas = () => {
       // Position to event point
       if (event) {
         inVpCenter = false;
-        const pointer = Refer.canvas.getScenePoint(event);
+        const pointer = Refer.canvas.getScenePoint(event as TPointerEvent);
         offsetPoint.setXY(pointer.x, pointer.y);
       }
 
@@ -223,7 +223,6 @@ const ReferCanvas = () => {
       // When has HTML then skip file type
       const hasHtml = [...items].some(item => item.type.match('^text/html'));
 
-      debugger;
       for (let i = 0; i < items.length; i += 1) {
         const item = items[i];
         if ((item.kind === 'string') && (item.type.match('^text/plain'))) {
@@ -270,13 +269,17 @@ const ReferCanvas = () => {
 
                       FabricImage.fromURL(imageSrc, {}, imageOptions)
                         .then((imageObject) => {
-                          debugger;
                           resolve(imageObject);
                         }).catch(() => {
-                          debugger;
                           resolve(undefined);
                         });
                     };
+
+                    // 图片加载失败
+                    newImg.onerror = () => {
+                      resolve(undefined);
+                    }
+
                     newImg.src = img.src;
                   });
                 }
@@ -294,19 +297,34 @@ const ReferCanvas = () => {
                 appendedMap[src] = true;
                 appendLength += 1;
 
-                const imageOptions = {
-                  left: offsetPoint.x,
-                  top: offsetPoint.y,
-                };
-
                 const newImg = new Image();
                 newImg.onload = function () {
+                  const imageHeight = 300;
+                  const scale = imageHeight / newImg.height;
+                  const imageWidth = newImg.width * scale;
+
+                  const renderWidth = imageWidth / zoom;
+                  const renderHeight = imageHeight / zoom;
+
+                  const imageOptions = {
+                    scaleX: scale / zoom,
+                    scaleY: scale / zoom,
+                    left: offsetPoint.x - renderWidth / 2,
+                    top: offsetPoint.y - renderHeight / 2,
+                  };
+
                   FabricImage.fromURL(src, {}, imageOptions).then((imageObject) => {
                     resolve(imageObject);
                   }).catch(() => {
                     resolve(undefined);
                   });
                 };
+
+                // 图片加载失败
+                newImg.onerror = () => {
+                  resolve(undefined);
+                }
+
                 newImg.src = src;
               }
             });
@@ -326,6 +344,7 @@ const ReferCanvas = () => {
 
                 const img = new Image();
                 img.onload = function () {
+                  debugger;
                   // 图片显示高度为300px
                   const imageHeight = 300;
                   const scale = imageHeight / img.height;
@@ -430,9 +449,9 @@ const ReferCanvas = () => {
       const dropAction = (originEvent: DragEvent) => {
         originEvent.preventDefault();
 
-        const items = originEvent.dataTransfer?.items;
-        if (items) {
-          const JSONFile = [...items].find(item => item.type.match('^application/json'));
+        const transferItemList = originEvent.dataTransfer?.items;
+        if (transferItemList) {
+          const JSONFile = [...transferItemList].find(item => item.type.match('^application/json'));
           if (JSONFile) { // 加载 refer 文件
             const textStr = JSONFile.getAsFile()?.text();
             textStr?.then(str => {
@@ -447,11 +466,11 @@ const ReferCanvas = () => {
             })
           }
 
-          addFromDataTransfer(items, originEvent)
-            .then((eles) => {
-              Refer.canvas.setActiveObject(eles);
-            });
+          addFromDataTransfer(transferItemList, originEvent).then((activeObject) => {
+            Refer.canvas.setActiveObject(activeObject);
+          });
         }
+
       }
 
       const dragoverAction = (event: DragEvent) => {
@@ -494,20 +513,24 @@ const ReferCanvas = () => {
 
   // 粘贴内容到画布
   useEffect(() => {
+    const Refer = ReferRef.current;
     const canvasDom = canvasEl.current;
-    if (canvasDom) {
-      const pasteAction = (e: ClipboardEvent) => {
-        e.preventDefault();
+    if (Refer && canvasDom) {
+      const pasteAction = (event: ClipboardEvent) => {
+        event.preventDefault();
 
         // 粘贴系统剪贴板内容
-        addFromDataTransfer(e.clipboardData?.items).then(eles => {
-          if (eles.length) {
-            ReferRef.current?.selectElement(eles);
-          } else {
-            // 系统剪贴板没粘贴内容，则粘贴画布剪贴板内容
-            ReferRef.current?.pasteElement();
-          }
-        });
+        if (event?.clipboardData?.items) {
+          const items = event.clipboardData.items;
+          addFromDataTransfer(items).then(activeObject => {
+            if (activeObject) {
+              Refer.canvas.setActiveObject(activeObject);
+            } else {
+              // 系统剪贴板没粘贴内容，则粘贴画布剪贴板内容
+              Refer.pasteElement();
+            }
+          });
+        }
       };
 
       const ownerDocument = canvasDom.ownerDocument;
@@ -628,15 +651,26 @@ const ReferCanvas = () => {
       e.preventDefault();
       if (ReferRef.current) {
         const elements = ReferRef.current.getActiveObject();
-        const imageDataURL = elements.toDataURL({ format: 'png' });
 
-        const res = await fetch(imageDataURL);
-        const blob = await res.blob();
-        const data = [new ClipboardItem({ [blob.type]: blob })];
+        if (elements) {
+          let imageDataURL: string | undefined;
 
-        navigator.clipboard.write(data).then(() => {
-          console.info('复制成功');
-        });
+          try {
+            imageDataURL = elements.toDataURL({ format: 'png' });
+          } catch (error) {
+            console.warn('复制失败', error);
+          }
+
+          if (imageDataURL) {
+            const res = await fetch(imageDataURL);
+            const blob = await res.blob();
+            const data = [new ClipboardItem({ [blob.type]: blob })];
+
+            navigator.clipboard.write(data).then(() => {
+              console.info('复制成功');
+            });
+          }
+        }
       }
     },
     element,
