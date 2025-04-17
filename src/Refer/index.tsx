@@ -88,7 +88,7 @@ const ReferCanvas = () => {
 
         // 按住ctrl键，滚动鼠标滚轮，缩放画布
         if (event.ctrlKey || event.metaKey) {
-          let ratio = event.deltaY * (Number.isInteger(event.deltaY) ? 0.003 : 0.02);
+          let ratio = event.deltaY * (Number.isInteger(event.deltaY) ? 0.003 : 0.002);
           if (event.shiftKey) {
             ratio *= 5;
           } else if (event.altKey) {
@@ -209,7 +209,7 @@ const ReferCanvas = () => {
       const offsetPoint = Refer.canvas.getVpCenter();
 
       // Position to event point
-      if (event) {
+      if (event && event instanceof DragEvent) {
         inVpCenter = false;
         const pointer = Refer.canvas.getScenePoint(event as TPointerEvent);
         offsetPoint.setXY(pointer.x, pointer.y);
@@ -229,7 +229,7 @@ const ReferCanvas = () => {
           // Add Text node
           const newElePromise = new Promise<FabricObject | undefined>((resolve) => {
             item.getAsString((data) => {
-              const newEle = new FabricText(data);
+              const newEle = Refer.createText({ text: data });
               resolve(newEle);
             })
           });
@@ -344,7 +344,6 @@ const ReferCanvas = () => {
 
                 const img = new Image();
                 img.onload = function () {
-                  debugger;
                   // 图片显示高度为300px
                   const imageHeight = 300;
                   const scale = imageHeight / img.height;
@@ -728,8 +727,10 @@ const ReferCanvas = () => {
     if (Ref) {
       window.addEventListener('resize', function () {
         const canvas = Ref.canvas;
-        canvas.setWidth(document.documentElement.clientWidth);
-        canvas.setHeight(document.documentElement.clientHeight);
+        canvas.setDimensions({
+          width: document.documentElement.clientWidth,
+          height: document.documentElement.clientHeight,
+        })
         canvas.requestRenderAll();
         canvas.calcOffset();
       }, { passive: true });

@@ -198,18 +198,38 @@ export default class Refer {
     }
   }
 
-  // Add Text element
-  addText(text: string = '', opts: ITextOptions = {
-    fill: '#ed5e77',
+  // Create Text element
+  createText({
+    text = '',
+    opts = { fill: '#ed5e77', },
+    inVpCenter = true
+  }: {
+    text: string,
+    opts?: ITextOptions,
+    inVpCenter?: boolean
   }): FabricText {
     var textEle = new IText(text, opts);
-    const centerPoint = this.canvas.getVpCenter();
 
-    textEle.set({
-      left: centerPoint.x - textEle.getScaledWidth() / 2,
-      top: centerPoint.y - textEle.getScaledHeight() / 2,
-    });
+    if (inVpCenter) {
+      const centerPoint = this.canvas.getVpCenter();
+      textEle.left = centerPoint.x - textEle.getScaledWidth() / 2;
+      textEle.top = centerPoint.y - textEle.getScaledHeight() / 2;
+    }
 
+    return textEle;
+  }
+
+  // Add Text element
+  addText({
+    text = '',
+    opts = { fill: '#ed5e77', },
+    inVpCenter = true
+  }: {
+    text: string,
+    opts: ITextOptions,
+    inVpCenter: boolean
+  }): FabricText {
+    const textEle = this.createText({ text, opts, inVpCenter });
     this.canvas.add(textEle);
     return textEle;
   }
