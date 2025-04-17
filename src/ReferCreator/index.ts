@@ -226,8 +226,8 @@ export default class Refer {
     inVpCenter = true
   }: {
     text: string,
-    opts: ITextOptions,
-    inVpCenter: boolean
+    opts?: ITextOptions,
+    inVpCenter?: boolean
   }): FabricText {
     const textEle = this.createText({ text, opts, inVpCenter });
     this.canvas.add(textEle);
@@ -360,7 +360,7 @@ export default class Refer {
   }
 
   // Copy element to clipboard
-  async copyElement(elements?: FabricObject | FabricObject[], event?: ClipboardEvent) {
+  copyElement(elements?: FabricObject | FabricObject[], event?: ClipboardEvent) {
     if (!elements) {
       elements = [this.canvas.getActiveObject() as FabricObject];
     } if (!Array.isArray(elements)) {
@@ -368,14 +368,14 @@ export default class Refer {
     }
 
     this.clipboard = [];
-    const cloned = await Promise.all(elements.map(element => element.clone()));
-    this.clipboard.push(...cloned);
 
-    if (event) {
-      event.clipboardData?.setData('text/plain', '');
+    if (event && elements.length) {
+      event.clipboardData?.setData('text/plain', 'refer-empty');
+
+      return Promise.all(elements.map(element => element.clone())).then(cloned => {
+        this.clipboard.push(...cloned);
+      });
     }
-
-    return cloned;
   }
 
   // Paste clipboard element

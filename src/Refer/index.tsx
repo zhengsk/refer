@@ -376,6 +376,10 @@ const ReferCanvas = () => {
       }
 
       return Promise.all(addedElements).then(elements => {
+        if (elements.length === 0) {
+          return null;
+        }
+
         // 多维数组，需要扁平化
         const flatElements = elements.flat();
         const newElements = flatElements.reduce((acc: FabricObject[], item, index) => {
@@ -491,11 +495,12 @@ const ReferCanvas = () => {
   useEffect(() => {
     const canvasDom = canvasEl.current;
     if (canvasDom) {
-      const copyAction = (e: ClipboardEvent) => {
+      const copyAction = (event: ClipboardEvent) => {
         if (ReferRef.current) {
-          if (ReferRef.current.getActiveObject()) {
-            e.preventDefault();
-            ReferRef.current.copyElement(undefined, e);
+          const activeObject = ReferRef.current.getActiveObject();
+          if (activeObject) {
+            event.preventDefault();
+            ReferRef.current.copyElement(activeObject, event);
           }
         }
       };
@@ -520,7 +525,8 @@ const ReferCanvas = () => {
 
         // 粘贴系统剪贴板内容
         if (event?.clipboardData?.items) {
-          const items = event.clipboardData.items;
+          const text = event.clipboardData?.getData('text/plain');
+          const items = text === 'refer-empty' ? [] : event.clipboardData.items;
           addFromDataTransfer(items).then(activeObject => {
             if (activeObject) {
               Refer.canvas.setActiveObject(activeObject);
@@ -777,10 +783,7 @@ const ReferCanvas = () => {
       const zoom = Refer.getZoom();
       const fontSize = 50 / zoom;
 
-      Refer.addText('Hello Refer!', {
-        fill: '#ed5e77',
-        fontSize,
-      });
+      Refer.addText({ text: 'Hello Refer!' });
     }
   }, []);
 
