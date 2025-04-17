@@ -8,6 +8,7 @@ import styles from './index.module.less';
 import { useShortcut } from '../utils/useShortcut';
 import Toolbar from '../components/toolbar';
 import ContextMenu from '../components/context-menu';
+import { REFER_CLIPBOARD_TYPE, REFER_EMPTY } from '../constants/clipboard';
 
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
@@ -525,8 +526,8 @@ const ReferCanvas = () => {
 
         // 粘贴系统剪贴板内容
         if (event?.clipboardData?.items) {
-          const text = event.clipboardData?.getData('text/plain');
-          const items = text === 'refer-empty' ? [] : event.clipboardData.items;
+          const text = event.clipboardData?.getData(REFER_CLIPBOARD_TYPE);
+          const items = text === REFER_EMPTY ? [] : event.clipboardData.items;
           addFromDataTransfer(items).then(activeObject => {
             if (activeObject) {
               Refer.canvas.setActiveObject(activeObject);

@@ -1,13 +1,9 @@
 import { ActiveSelection, Canvas as FabricCanvas, FabricImage, FabricObject, InteractiveFabricObject, IText, Point } from 'fabric';
 // import 'fabric-history'; // history https://www.npmjs.com/package/fabric-history
-import type {
-  CanvasEvents,
-  FabricText,
-  IImageOptions,
-  ITextOptions,
-  TMat2D,
-} from 'fabric/fabric-impl';
+import type { CanvasEvents, FabricText, IImageOptions, ITextOptions, TMat2D, } from 'fabric/fabric-impl';
+import { REFER_CLIPBOARD_TYPE, REFER_EMPTY } from '../constants/clipboard';
 import { removeFromArray } from '../utils/tools';
+
 interface Canvas extends FabricCanvas {
   undo(): void;
   redo(): void;
@@ -370,7 +366,7 @@ export default class Refer {
     this.clipboard = [];
 
     if (event && elements.length) {
-      event.clipboardData?.setData('text/plain', 'refer-empty');
+      event.clipboardData?.setData(REFER_CLIPBOARD_TYPE, REFER_EMPTY);
 
       return Promise.all(elements.map(element => element.clone())).then(cloned => {
         this.clipboard.push(...cloned);
