@@ -1,4 +1,4 @@
-import { ActiveSelection, Canvas as FabricCanvas, FabricImage, FabricObject, InteractiveFabricObject, IText, Point } from 'fabric';
+import { ActiveSelection, Canvas as FabricCanvas, FabricImage, FabricObject, InteractiveFabricObject, IText, Point, util } from 'fabric';
 // import 'fabric-history'; // history https://www.npmjs.com/package/fabric-history
 import type { CanvasEvents, FabricText, IImageOptions, ITextOptions, TMat2D, } from 'fabric/fabric-impl';
 import { REFER_CLIPBOARD_TYPE, REFER_EMPTY } from '../constants/clipboard';
@@ -108,7 +108,75 @@ export default class Refer {
     }
   }
 
-  // Fit element to viewport
+  // 平滑动画到对象
+  animateToObject({
+    object,
+    targetZoom,
+    duration = 200,
+    smooth = true,
+  }: {
+    object: FabricObject,
+    targetZoom: number,
+    duration?: number,
+    smooth?: boolean,
+  }) {
+    const canvas = this.canvas;
+
+    // 获取当前画布状态
+    const currentZoom = canvas.getZoom();
+    const startPoint = new Point(canvas.viewportTransform[4], canvas.viewportTransform[5]);
+
+    // 计算目标对象在视口中居中时的最终平移值
+    const objectCenter = object.getCenterPoint();
+    const viewportCenter = {
+      x: canvas.width / 2 / targetZoom,
+      y: canvas.height / 2 / targetZoom
+    };
+
+    // 计算最终需要平移到的位置
+    const endPoint = new Point(
+      -objectCenter.x * targetZoom + viewportCenter.x * targetZoom,
+      -objectCenter.y * targetZoom + viewportCenter.y * targetZoom
+    );
+
+    if (smooth) {
+      // 创建动画
+      util.animate({
+        startValue: 0,
+        endValue: 100,
+        duration: duration,
+        easing: util.ease.easeOutCubic, // 使用缓动函数使动画更平滑
+        onChange: function (value) {
+          const progress = value / 100;
+
+          // 计算当前缩放值
+          const zoom = currentZoom + (targetZoom - currentZoom) * progress;
+
+          // 计算当前平移值
+          const translateX = startPoint.x + (endPoint.x - startPoint.x) * progress;
+          const translateY = startPoint.y + (endPoint.y - startPoint.y) * progress;
+
+          // 应用变换
+          const vpt = canvas.viewportTransform!;
+          vpt[0] = vpt[3] = zoom;
+          vpt[4] = translateX;
+          vpt[5] = translateY;
+
+          canvas.setViewportTransform(vpt);
+          canvas.requestRenderAll();
+        }
+      });
+    } else {
+      const vpt = canvas.viewportTransform!;
+      vpt[0] = vpt[3] = targetZoom;
+      vpt[4] = endPoint.x;
+      vpt[5] = endPoint.y;
+
+      canvas.setViewportTransform(vpt);
+      canvas.requestRenderAll();
+    }
+  }
+
   fitViewElement({
     element,
     callback,
@@ -129,7 +197,7 @@ export default class Refer {
         this.preViewStatus.element = ele;
       }
 
-      const offset = 20;
+      const offset = 0;
       const zoom = canvas.getZoom();
 
       const canvasWidth = canvas.getWidth();
@@ -143,27 +211,11 @@ export default class Refer {
 
       const ratio = Math.min(widthRatio, heightRatio);
 
-      const eleCenterPoint = ele.getCenterPoint();
-
-      const absolutePanSize = new Point(
-        (eleCenterPoint.x) * zoom - canvasWidth / 2,
-        (eleCenterPoint.y) * zoom - canvasHeight / 2
-      );
-      canvas.absolutePan(absolutePanSize);
-
-      // const canvasCenterPoint = canvas.getVpCenter();
-      // const relativePanSize =  new fabric.Point(
-      //   (canvasCenterPoint.x - eleCenterPoint.x) * zoom,
-      //   (canvasCenterPoint.y - eleCenterPoint.y) * zoom
-      // );
-      // canvas.relativePan(relativePanSize);
-
-      const eleRect = ele.getBoundingRect();
-      const point = new Point(
-        eleRect.left + eleRect.width / 2,
-        eleRect.top + eleRect.height / 2
-      );
-      canvas.zoomToPoint(point, zoom * ratio);
+      // 在该点上添加一个点
+      this.animateToObject({
+        object: ele,
+        targetZoom: zoom * ratio,
+      });
 
       if (callback) { callback(); }
     }
