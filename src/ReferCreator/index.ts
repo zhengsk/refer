@@ -17,7 +17,12 @@ export default class Refer {
   public textEditing: boolean;
   public textEditingElement: IText | undefined;
 
-  public preViewStatus: { zoom: number, panPoint: Point, element: FabricObject } | undefined;
+  public preViewStatus: {
+    zoom: number,
+    center: Point,
+    element: FabricObject,
+  } | undefined;
+
   public clipboard: FabricObject[] = [];
 
   constructor(fabricCanvas: FabricCanvas) {
@@ -76,23 +81,15 @@ export default class Refer {
     return this.canvas.setZoom(zoom);
   }
 
-
-
   // Get canvas view status：zoom and absolute pan value
   setPreViewStatus(element: FabricObject) {
     const { canvas } = this;
     const zoom = canvas.getZoom();
-    const vpCenter = canvas.getVpCenter();
-    const center = canvas.getCenter();
-
-    const panPoint = new Point(
-      vpCenter.x * zoom - center.left,
-      vpCenter.y * zoom - center.top
-    );
+    const center = canvas.getVpCenter();
 
     this.preViewStatus = {
       zoom,
-      panPoint,
+      center,
       element,
     }
   }
@@ -100,25 +97,24 @@ export default class Refer {
   // Restore preview status
   restorePreViewStatus() {
     if (this.preViewStatus) {
-      const { zoom, panPoint } = this.preViewStatus;
-      this.canvas.zoomToPoint(new Point(-panPoint.x, -panPoint.y), zoom);
-      this.canvas.absolutePan(panPoint);
+      this.animateToPoint({
+        point: this.preViewStatus.center,
+        targetZoom: this.preViewStatus.zoom,
+      });
 
       this.preViewStatus = undefined;
     }
   }
 
-  // 平滑动画到对象
-  animateToObject({
-    object,
+  // 平滑动画到指定点和缩放
+  animateToPoint({
+    point,
     targetZoom,
     duration = 200,
-    smooth = true,
   }: {
-    object: FabricObject,
+    point: Point,
     targetZoom: number,
     duration?: number,
-    smooth?: boolean,
   }) {
     const canvas = this.canvas;
 
@@ -127,7 +123,6 @@ export default class Refer {
     const startPoint = new Point(canvas.viewportTransform[4], canvas.viewportTransform[5]);
 
     // 计算目标对象在视口中居中时的最终平移值
-    const objectCenter = object.getCenterPoint();
     const viewportCenter = {
       x: canvas.width / 2 / targetZoom,
       y: canvas.height / 2 / targetZoom
@@ -135,11 +130,11 @@ export default class Refer {
 
     // 计算最终需要平移到的位置
     const endPoint = new Point(
-      -objectCenter.x * targetZoom + viewportCenter.x * targetZoom,
-      -objectCenter.y * targetZoom + viewportCenter.y * targetZoom
+      -point.x * targetZoom + viewportCenter.x * targetZoom,
+      -point.y * targetZoom + viewportCenter.y * targetZoom
     );
 
-    if (smooth) {
+    if (duration !== 0) {
       // 创建动画
       util.animate({
         startValue: 0,
@@ -175,6 +170,28 @@ export default class Refer {
       canvas.setViewportTransform(vpt);
       canvas.requestRenderAll();
     }
+  }
+
+  // 平滑动画到对象
+  animateToObject({
+    object,
+    targetZoom,
+    duration = 200,
+  }: {
+    object: FabricObject,
+    targetZoom: number,
+    duration?: number,
+  }) {
+    const canvas = this.canvas;
+
+    // 计算目标对象在视口中居中时的最终平移值
+    const point = object.getCenterPoint();
+
+    this.animateToPoint({
+      point,
+      targetZoom,
+      duration,
+    });
   }
 
   fitViewElement({
