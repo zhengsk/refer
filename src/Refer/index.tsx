@@ -572,14 +572,16 @@ const ReferCanvas = () => {
 
   // 键盘 G：下一个元素自适应 
   useShortcut({
-    keys: ['g', 'G', 'ArrowLeft', 'ArrowRight'],
+    keys: ['g', 'shift+g', 'ArrowLeft', 'ArrowRight'],
     callback: (e: KeyboardEvent) => {
       const Refer = ReferRef.current;
       if (Refer) {
         let currentElement = Refer.preViewStatus?.element || Refer.canvas.getActiveObject();
+        if (!currentElement) { return; }
+
         const allElements = Refer.canvas.getObjects();
         let index = allElements.indexOf(currentElement);
-        index += (e.key === 'G' || e.key === 'ArrowLeft') ? -1 : 1;
+        index += e.key === 'G' || e.key === 'ArrowLeft' ? -1 : 1;
         if (index > allElements.length - 1) { index = 0 }
         if (index < 0) { index = allElements.length }
 
