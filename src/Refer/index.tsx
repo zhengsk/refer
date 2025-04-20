@@ -1,6 +1,6 @@
 import { Canvas, Rect, Point, FabricImage, FabricText, ActiveSelection } from 'fabric';
 import { initAligningGuidelines } from 'fabric/extensions';
-import type { TEvent, FabricObject, TPointerEvent } from 'fabric/fabric-impl';
+import type { TEvent, FabricObject, TPointerEvent, IText } from 'fabric/fabric-impl';
 import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from '../ReferCreator';
 import { saveAs, fileOpen } from '../utils/fileAccess';
@@ -18,7 +18,7 @@ const ReferCanvas = () => {
   const canvasEl = useRef<HTMLCanvasElement | null>(null);
   const [zoom, setZoom] = useState(1);
   // const {isFitviewMode, setIsFitViewMode} = useState(false);
-  const element = canvasEl.current?.ownerDocument;
+  const element = document;
 
   const [contextMenu, setContextMenu] = useState({
     visible: false,
@@ -27,8 +27,7 @@ const ReferCanvas = () => {
 
   useEffect(() => {
     const options = { preserveObjectStacking: true };
-    const canvas = new Canvas(canvasEl.current, options);
-    const Refer = new ReferCreator(canvas);
+    const Refer = new ReferCreator(canvasEl.current, options);
 
     ReferRef.current = Refer;
     (window as any).Refer = Refer;
@@ -73,7 +72,6 @@ const ReferCanvas = () => {
     });
 
     return () => {
-      canvas.dispose();
       Refer.dispose();
     }
   }, []);
@@ -189,11 +187,17 @@ const ReferCanvas = () => {
   useEffect(() => {
     const Refer = ReferRef.current;
     if (Refer) {
-      Refer.addEventListener('mouse:dblclick', (e: TEvent & { target: FabricObject }) => {
-        if (e.target) {
+      if (!(element as any).referIsTextEditing) {
+        Refer.addEventListener('mouse:dblclick', (e: TEvent & { target: FabricObject }) => {
+          // 不处于文本编辑状态
+          if (e.target.isType('i-text') && (e.target as IText).isEditing) {
+            return;
+          }
+
+          // 自适应窗口
           switchFitViewElement(e.target);
-        }
-      });
+        });
+      }
     }
   }, []);
 
@@ -732,17 +736,27 @@ const ReferCanvas = () => {
 
   // 画布大小变化
   useEffect(() => {
-    const Ref = ReferRef.current;
-    if (Ref) {
-      window.addEventListener('resize', function () {
-        const canvas = Ref.canvas;
-        canvas.setDimensions({
-          width: document.documentElement.clientWidth,
-          height: document.documentElement.clientHeight,
-        })
-        canvas.requestRenderAll();
-        canvas.calcOffset();
-      }, { passive: true });
+    const Refer = ReferRef.current;
+    if (Refer) {
+      const handleResize = function () {
+        if (ReferRef.current && ReferRef.current.canvas) {
+          const canvas = ReferRef.current.canvas;
+          canvas.setDimensions({
+            width: document.documentElement.clientWidth,
+            height: document.documentElement.clientHeight,
+          });
+          // canvas.requestRenderAll();
+          // canvas.calcOffset();
+        }
+      };
+
+      window.addEventListener('resize', handleResize, { passive: true });
+
+      // 组件卸载时移除事件监听器
+      return () => {
+        debugger;
+        window.removeEventListener('resize', handleResize);
+      };
     }
   }, []);
 

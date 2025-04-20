@@ -1,17 +1,11 @@
-import { ActiveSelection, Canvas as FabricCanvas, FabricImage, FabricObject, InteractiveFabricObject, IText, Point, util } from 'fabric';
-// import 'fabric-history'; // history https://www.npmjs.com/package/fabric-history
+import { ActiveSelection, FabricImage, FabricObject, InteractiveFabricObject, IText, Point, util } from 'fabric';
 import type { CanvasEvents, FabricText, IImageOptions, ITextOptions, TMat2D, } from 'fabric/fabric-impl';
 import { REFER_CLIPBOARD_TYPE, REFER_EMPTY } from '../constants/clipboard';
 import { removeFromArray } from '../utils/tools';
-
-interface Canvas extends FabricCanvas {
-  undo(): void;
-  redo(): void;
-  wrapperEl: HTMLCanvasElement;
-}
+import ReferCanvas from './extensions/history';
 
 export default class Refer {
-  public canvas: Canvas;
+  public canvas: ReferCanvas;
   public dragMode: boolean;
   public dragging: boolean;
   public textEditing: boolean;
@@ -25,8 +19,8 @@ export default class Refer {
 
   public clipboard: FabricObject[] = [];
 
-  constructor(fabricCanvas: FabricCanvas) {
-    this.canvas = fabricCanvas;
+  constructor(canvasEl: HTMLCanvasElement, options?: any) {
+    this.canvas = new ReferCanvas(canvasEl, options);
     this.dragMode = false;
     this.dragging = false;
     this.textEditing = false;
@@ -539,8 +533,10 @@ export default class Refer {
   }
 
   dispose() {
-    // TODO: destory canvas
-    console.info('dispose');
+    // TODO: history dispose
+
+    // dispose canvas
+    this.canvas.dispose();
   }
 
   // history undo
