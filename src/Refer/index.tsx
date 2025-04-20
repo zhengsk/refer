@@ -527,6 +527,30 @@ const ReferCanvas = () => {
 
   }, []);
 
+  // 剪切
+  useEffect(() => {
+    const Refer = ReferRef.current;
+    const canvasDom = canvasEl.current;
+
+    if (Refer && canvasDom) {
+      const cutAction = (event: ClipboardEvent) => {
+        const activeObject = Refer.getActiveObject();
+        if (activeObject) {
+          event.preventDefault();
+          Refer.copyElement(activeObject, event);
+          Refer.deleteElement(activeObject);
+        }
+      };
+
+      const ownerDocument = canvasDom.ownerDocument;
+      ownerDocument.addEventListener('cut', cutAction);
+
+      return () => {
+        ownerDocument.removeEventListener('cut', cutAction);
+      }
+    }
+  }, []);
+
   // 粘贴内容到画布
   useEffect(() => {
     const Refer = ReferRef.current;
