@@ -431,7 +431,13 @@ export default class Refer {
     }
 
     elements.forEach(ele => {
-      this.canvas.remove(ele);
+      if (ele.type === 'activeselection') {
+        (ele as ActiveSelection).getObjects().forEach(obj => {
+          this.canvas.remove(obj);
+        });
+      } else {
+        this.canvas.remove(ele);
+      }
     });
 
     this.canvas.discardActiveObject();
