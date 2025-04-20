@@ -387,6 +387,16 @@ const ReferCanvas = () => {
 
         // 多维数组，需要扁平化
         const flatElements = elements.flat();
+
+        // 总宽度
+        const totalWidth = flatElements.reduce((acc: number, item, index) => {
+          return acc + (item?.getScaledWidth() || 0) + (index > 0 ? 20 : 0);
+        }, 0);
+
+        // 设置第一个元素的位置
+        flatElements[0]!.set('left', offsetPoint.x - totalWidth / 2);
+
+        // 如果元素是图片，则需要设置为 active
         const newElements = flatElements.reduce((acc: FabricObject[], item, index) => {
           if (Array.isArray(item)) {
             const newElements = item.filter(ele => ele);
@@ -407,12 +417,7 @@ const ReferCanvas = () => {
           return acc;
         }, []);
 
-        const selection = new ActiveSelection([...newElements]);
-
-        const offset = selection.getScaledWidth() / 2;
-        selection.set('left', offsetPoint.x - offset);
-
-        return selection;
+        return newElements;
       });
     }
   }, []);
@@ -474,8 +479,10 @@ const ReferCanvas = () => {
             })
           }
 
-          addFromDataTransfer(transferItemList, originEvent).then((activeObject) => {
-            Refer.canvas.setActiveObject(activeObject);
+          addFromDataTransfer(transferItemList, originEvent).then((elements) => {
+            if (elements && elements.length) {
+              Refer.addElement(elements);
+            }
           });
         }
 
@@ -532,9 +539,9 @@ const ReferCanvas = () => {
         if (event?.clipboardData?.items) {
           const text = event.clipboardData?.getData(REFER_CLIPBOARD_TYPE);
           const items = text === REFER_EMPTY ? [] : event.clipboardData.items;
-          addFromDataTransfer(items).then(activeObject => {
-            if (activeObject) {
-              Refer.canvas.setActiveObject(activeObject);
+          addFromDataTransfer(items).then(elements => {
+            if (elements && elements.length) {
+              Refer.addElement(elements);
             } else {
               // 系统剪贴板没粘贴内容，则粘贴画布剪贴板内容
               Refer.pasteElement();
@@ -754,7 +761,6 @@ const ReferCanvas = () => {
 
       // 组件卸载时移除事件监听器
       return () => {
-        debugger;
         window.removeEventListener('resize', handleResize);
       };
     }

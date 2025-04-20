@@ -32,8 +32,6 @@ export default class ReferCanvas extends Canvas {
     this.historyNextState = this._historyNext();
 
     this.on(this._historyEvents());
-    // 初始保存当前状态
-    this._historySaveAction('onHistory');
   }
 
   // 清理历史相关资源
@@ -55,9 +53,9 @@ export default class ReferCanvas extends Canvas {
   // 返回需要监听的事件映射
   _historyEvents(): Record<string, Function> {
     return {
-      'object:added': () => { this._historySaveAction.bind(this)('object:added') },
-      'object:removed': () => { this._historySaveAction.bind(this)('object:removed') },
-      'object:modified': () => { this._historySaveAction.bind(this)('object:modified') },
+      'object:added': (event: any) => { this._historySaveAction.bind(this)('object:added', event) },
+      'object:removed': (event: any) => { this._historySaveAction.bind(this)('object:removed', event) },
+      'object:modified': (event: any) => { this._historySaveAction.bind(this)('object:modified', event) },
       // 'object:skewing': () => { this._historySaveAction.bind(this)('object:skewing') },
       // 'object:rotated': () => { this._historySaveAction.bind(this)('object:rotated') },
       // 'object:scaled': () => { this._historySaveAction.bind(this)('object:scaled') },
@@ -65,21 +63,21 @@ export default class ReferCanvas extends Canvas {
   }
 
   // 保存当前状态到历史栈
-  _historySaveAction(event: string): void {
-    console.log('event', event);
-
+  _historySaveAction(event: string, eventData: any): void {
+    console.log('event', event, eventData);
     if (this.historyProcessing) {
       return;
     }
 
-    const currentState = this._historyNext();
+    const nextState = this.historyNextState;
 
     // 检查是否与上一个状态相同，避免重复记录
-    if (this.historyUndo.length > 0 && this.historyUndo[this.historyUndo.length - 1] === currentState) {
+    if (this.historyUndo.length > 0 && this.historyUndo[this.historyUndo.length - 1] === nextState) {
+      this.historyNextState = this._historyNext();
       return;
     }
 
-    this.historyUndo.push(currentState);
+    this.historyUndo.push(nextState);
 
     // 限制历史栈大小
     if (this.historyUndo.length > this.historyMaxSize) {
@@ -89,8 +87,13 @@ export default class ReferCanvas extends Canvas {
     // 新增状态后清空重做栈
     this.historyRedo = [];
 
-    this.historyNextState = currentState;
-    this.fire('history:append', { json: currentState });
+    this.historyNextState = this._historyNext();
+    this.fire('history:append', { json: this.historyNextState });
+  }
+
+  // 手动添加历史记录
+  createNewHistory(): void {
+    this._historySaveAction('history:create:manual', {});
   }
 
   // 加载历史状态
@@ -98,21 +101,17 @@ export default class ReferCanvas extends Canvas {
     try {
       this.historyProcessing = true;
       this.loadFromJSON(history, () => {
-        // this.renderAll();
         this.requestRenderAll();
         this.fire(event, { json: history });
 
         // 确保历史状态正确同步
         this.historyNextState = this._historyNext();
-
-        // 延迟关闭处理状态，确保所有渲染和事件处理完成
-        setTimeout(() => {
-          this.historyProcessing = false;
-          if (callback && typeof callback === 'function') {
-            callback();
-          }
-        }, 0);
-      });
+      }).finally(() => {
+        this.historyProcessing = false;
+        if (callback && typeof callback === 'function') {
+          callback();
+        }
+      })
     } catch (error) {
       console.error('加载历史记录失败:', error);
       this.historyProcessing = false;
@@ -205,7 +204,7 @@ export default class ReferCanvas extends Canvas {
   onHistory(): void {
     this.historyProcessing = false;
     // 开启时保存当前状态
-    this._historySaveAction('onHistory');
+    this._historySaveAction('onHistory', {});
   }
 
   // 关闭历史记录

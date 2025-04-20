@@ -63,6 +63,25 @@ export default class Refer {
     return this.canvas.getActiveObject();
   }
 
+  // 添加对象
+  addElement(object: FabricObject | FabricObject[], {
+    isActive = true,
+  }: {
+    isActive?: boolean,
+  } = {}) {
+    if (Array.isArray(object)) {
+      this.canvas.add(...object);
+    } else {
+      this.canvas.add(object);
+    }
+
+    if (isActive) {
+      // 选中所有元素
+      this.selectElement(object);
+    }
+  }
+
+  // 添加图片
   addImg() {
 
   }
@@ -557,7 +576,9 @@ export default class Refer {
   // load json
   loadJSON(jsonData: string | object) {
     return new Promise((resolve, reject) => {
-      this.canvas.loadFromJSON(jsonData, resolve);
+      this.canvas.loadFromJSON(jsonData, resolve).then(() => {
+        this.canvas.requestRenderAll();
+      });
     });
   }
 }
