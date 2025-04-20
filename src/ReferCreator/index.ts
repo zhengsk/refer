@@ -557,6 +557,33 @@ export default class Refer {
     this.canvas.requestRenderAll();
   }
 
+  // 翻转元素
+  flipElement(element?: FabricObject, direction: 'horizontal' | 'vertical' = 'horizontal') {
+    if (!element) {
+      element = this.canvas.getActiveObject();
+    }
+
+    if (!element) { return; }
+
+    if (element?.type === 'activeselection') {
+      (element as ActiveSelection).getObjects().forEach(obj => {
+        if (direction === 'horizontal') {
+          obj.flipX = !obj.flipX;
+        } else {
+          obj.flipY = !obj.flipY;
+        }
+      });
+    } else {
+      if (direction === 'horizontal') {
+        element.flipX = !element.flipX;
+      } else {
+        element.flipY = !element.flipY;
+      }
+    }
+
+    this.canvas.requestRenderAll();
+  }
+
   dispose() {
     // TODO: history dispose
 

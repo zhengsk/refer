@@ -628,6 +628,19 @@ const ReferCanvas = () => {
     element,
   });
 
+  // 键盘 H：翻转元素
+  useShortcut({
+    keys: ['h', 'v'],
+    callback: (e: KeyboardEvent) => {
+      const Refer = ReferRef.current;
+      if (Refer) {
+        const direction = e.key === 'h' ? 'horizontal' : 'vertical';
+        Refer.flipElement(Refer.getActiveObject(), direction);
+      }
+    },
+    element,
+  });
+
   // 键盘 0：缩放显示1:1 
   useShortcut({
     keys: ['0'],
