@@ -641,6 +641,22 @@ const ReferCanvas = () => {
     element,
   });
 
+  // 键盘 R：旋转元素
+  useShortcut({
+    keys: ['r', 'shift+r'],
+    callback: (e: KeyboardEvent) => {
+      const Refer = ReferRef.current;
+      if (Refer) {
+        const rotation = e.shiftKey ? -90 : 90;
+        const currentRotation = Refer.getActiveObject()?.get('angle') || 0;
+        const targetRotation = Math.round((currentRotation + rotation) / 90) * 90;
+        Refer.rotateElement(Refer.getActiveObject(), targetRotation);
+      }
+    },
+    element,
+  });
+
+
   // 键盘 0：缩放显示1:1 
   useShortcut({
     keys: ['0'],

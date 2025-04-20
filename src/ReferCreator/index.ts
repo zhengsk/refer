@@ -582,6 +582,48 @@ export default class Refer {
     }
 
     this.canvas.requestRenderAll();
+
+    // 触发事件， 用于历史记录
+    this.canvas.fire('object:modified', { target: element });
+  }
+
+  // 设置元素的旋转角度
+  rotateElement(element?: FabricObject, rotation: number = 0) {
+    if (!element) {
+      element = this.canvas.getActiveObject();
+    }
+
+    if (!element) { return; }
+
+    // 基于中心点旋转
+    const centerPoint = element.getCenterPoint();
+    const rotationPoint = new Point(centerPoint.x, centerPoint.y);
+
+    element.set({
+      originX: 'center',
+      originY: 'center',
+      left: rotationPoint.x,
+      top: rotationPoint.y,
+    });
+
+    // 旋转过程，显示动画
+    element.animate({
+      angle: rotation,
+    }, {
+      duration: 150,
+      onChange: (value: number) => {
+        element.setCoords();
+        this.canvas.requestRenderAll();
+      },
+      onComplete: () => {
+        element.setCoords();
+        this.canvas.requestRenderAll();
+
+        // 触发事件， 用于历史记录
+        this.canvas.fire('object:modified', { target: element });
+      },
+    });
+
   }
 
   dispose() {

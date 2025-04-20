@@ -56,9 +56,9 @@ export default class ReferCanvas extends Canvas {
       'object:added': (event: any) => { this._historySaveAction.bind(this)('object:added', event) },
       'object:removed': (event: any) => { this._historySaveAction.bind(this)('object:removed', event) },
       'object:modified': (event: any) => { this._historySaveAction.bind(this)('object:modified', event) },
-      // 'object:skewing': () => { this._historySaveAction.bind(this)('object:skewing') },
-      // 'object:rotated': () => { this._historySaveAction.bind(this)('object:rotated') },
-      // 'object:scaled': () => { this._historySaveAction.bind(this)('object:scaled') },
+      'object:rotated': (event: any) => { this._historySaveAction.bind(this)('object:rotated', event) },
+      // 'object:skewing': (event: any) => { this._historySaveAction.bind(this)('object:skewing', event) },
+      // 'object:scaled': (event: any) => { this._historySaveAction.bind(this)('object:scaled', event) },
     }
   }
 
