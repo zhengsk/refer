@@ -8,7 +8,7 @@
  */
 // 全屏工具
 import React from 'react';
-import Icon from '../../Icons';
+import Icon from '../../icons';
 import Tooltip from '../../Tooltip';
 
 const FullscreenTool = () => {

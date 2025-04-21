@@ -1,7 +1,8 @@
 import { ActiveSelection, FabricImage, FabricObject, InteractiveFabricObject, IText, Point, util } from 'fabric';
-import type { CanvasEvents, FabricText, IImageOptions, ITextOptions, TMat2D, } from 'fabric/fabric-impl';
+import type { CanvasEvents, FabricText, ImageProps, ITextProps, TMat2D } from 'fabric/fabric-impl';
 import { REFER_CLIPBOARD_TYPE, REFER_EMPTY } from '../constants/clipboard';
 import { removeFromArray } from '../utils/tools';
+import { initAligningGuidelines } from './extensions/aligning_guidelines';
 import ReferCanvas from './extensions/history';
 
 export default class Refer {
@@ -24,6 +25,13 @@ export default class Refer {
     this.dragMode = false;
     this.dragging = false;
     this.textEditing = false;
+
+    // 添加对齐线
+    initAligningGuidelines(this.canvas, {
+      margin: 10,
+      color: '#00FF00',
+      width: 2,
+    });
 
     this.setDefaultStyle(); // 设置默认样式
     this.initDragMode(); // 初始化拖拽模式
@@ -259,7 +267,7 @@ export default class Refer {
   }: {
     src: string,
     callback?: (img: FabricImage) => void,
-    imageOptions?: IImageOptions,
+    imageOptions?: Partial<ImageProps>,
     inVpCenter?: boolean,
   }) {
     try {
@@ -283,7 +291,7 @@ export default class Refer {
     inVpCenter = true
   }: {
     text: string,
-    opts?: ITextOptions,
+    opts?: Partial<ITextProps>,
     inVpCenter?: boolean
   }): FabricText {
     var textEle = new IText(text, opts);
@@ -304,7 +312,7 @@ export default class Refer {
     inVpCenter = true
   }: {
     text: string,
-    opts?: ITextOptions,
+    opts?: Partial<ITextProps>,
     inVpCenter?: boolean
   }): FabricText {
     const textEle = this.createText({ text, opts, inVpCenter });
@@ -397,7 +405,7 @@ export default class Refer {
   setDragMode(draggable: boolean) {
     this.dragMode = draggable;
     this.canvas.setCursor(draggable ? 'grab' : 'default');
-    this.canvas.interactive = !draggable;
+    // this.canvas.interactive = !draggable;
     this.canvas.selection = !draggable;
 
     //  TODO: Not all object is selectable
@@ -612,15 +620,15 @@ export default class Refer {
     }, {
       duration: 150,
       onChange: (value: number) => {
-        element.setCoords();
+        element!.setCoords();
         this.canvas.requestRenderAll();
       },
       onComplete: () => {
-        element.setCoords();
+        element!.setCoords();
         this.canvas.requestRenderAll();
 
         // 触发事件， 用于历史记录
-        this.canvas.fire('object:modified', { target: element });
+        this.canvas.fire('object:modified', { target: element! });
       },
     });
 

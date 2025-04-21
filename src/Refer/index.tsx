@@ -1,5 +1,4 @@
 import { Canvas, Rect, Point, FabricImage, FabricText, ActiveSelection } from 'fabric';
-import { initAligningGuidelines } from 'fabric/extensions';
 import type { TEvent, FabricObject, TPointerEvent, IText } from 'fabric/fabric-impl';
 import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from '../ReferCreator';
@@ -27,17 +26,10 @@ const ReferCanvas = () => {
 
   useEffect(() => {
     const options = { preserveObjectStacking: true };
-    const Refer = new ReferCreator(canvasEl.current, options);
+    const Refer = new ReferCreator(canvasEl.current as HTMLCanvasElement, options);
 
     ReferRef.current = Refer;
     (window as any).Refer = Refer;
-
-    // 添加对齐线
-    initAligningGuidelines(Refer.canvas, {
-      margin: 10,
-      color: '#00FF00',
-      width: 2,
-    });
 
     // 监听文本编辑状态, 添加到element上, 用户快捷键监听是判断是否处于文本编辑状态
     Refer.addEventListener('text:editing:entered', () => {
@@ -479,6 +471,7 @@ const ReferCanvas = () => {
             })
           }
 
+          // @ts-ignore
           addFromDataTransfer(transferItemList, originEvent).then((elements) => {
             if (elements && elements.length) {
               Refer.addElement(elements);
@@ -563,6 +556,8 @@ const ReferCanvas = () => {
         if (event?.clipboardData?.items) {
           const text = event.clipboardData?.getData(REFER_CLIPBOARD_TYPE);
           const items = text === REFER_EMPTY ? [] : event.clipboardData.items;
+
+          // @ts-ignore
           addFromDataTransfer(items).then(elements => {
             if (elements && elements.length) {
               Refer.addElement(elements);
