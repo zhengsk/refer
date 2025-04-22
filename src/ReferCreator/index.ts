@@ -461,8 +461,10 @@ export default class Refer {
 
     this.clipboard = [];
 
-    if (event && elements.length) {
-      event.clipboardData?.setData(REFER_CLIPBOARD_TYPE, REFER_EMPTY);
+    if (elements.length) {
+      if (event) {
+        event.clipboardData?.setData(REFER_CLIPBOARD_TYPE, REFER_EMPTY);
+      }
 
       return Promise.all(elements.map(element => element.clone())).then(cloned => {
         this.clipboard.push(...cloned);
@@ -471,23 +473,30 @@ export default class Refer {
   }
 
   // Paste clipboard element
-  pasteElement(elements?: FabricObject | FabricObject[]) {
+  pasteElement(elements?: FabricObject | FabricObject[], point?: Point) {
     if (!elements) {
       elements = this.clipboard;
     } else if (!Array.isArray(elements)) {
       elements = [elements];
     }
 
-    this.clipboard.forEach((ele) => {
+    elements.forEach((ele) => {
       this.canvas.discardActiveObject();
       const zoom = this.canvas.getZoom();
       const offset = 20 / zoom;
 
       ele.clone().then((newEle: FabricObject) => {
-        newEle.set({
-          left: (newEle.left as number) + offset,
-          top: (newEle.top as number) + offset,
-        });
+        if (point) {
+          newEle.set({
+            left: point.x - (newEle.width as number) / 2,
+            top: point.y - (newEle.height as number) / 2,
+          });
+        } else {
+          newEle.set({
+            left: (newEle.left as number) + offset,
+            top: (newEle.top as number) + offset,
+          });
+        }
 
         if (newEle.type === 'activeselection') {
           // active selection needs a reference to the canvas.
@@ -508,6 +517,7 @@ export default class Refer {
       ele.top = (ele.top || 0) + offset;
     })
 
+    // 清空剪贴板 并重新赋值
     this.clipboard = [];
     elements.forEach(async (element) => {
       const cloned = await element.clone();

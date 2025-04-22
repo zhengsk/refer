@@ -7,6 +7,7 @@ import styles from './index.module.less';
 import { useShortcut } from '../utils/useShortcut';
 import Toolbar from '../components/toolbar';
 import ContextMenu from '../components/context-menu';
+import type { MenuList } from '../components/context-menu';
 import { REFER_CLIPBOARD_TYPE, REFER_EMPTY } from '../constants/clipboard';
 
 const vw = document.documentElement.clientWidth;
@@ -19,9 +20,14 @@ const ReferCanvas = () => {
   // const {isFitviewMode, setIsFitViewMode} = useState(false);
   const element = document;
 
-  const [contextMenu, setContextMenu] = useState({
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    position: { x: number; y: number };
+    event: MouseEvent | undefined;
+  }>({
     visible: false,
     position: { x: 0, y: 0 },
+    event: undefined,
   });
 
   useEffect(() => {
@@ -872,9 +878,10 @@ const ReferCanvas = () => {
     }
   }, []);
 
-  const handlePaste = useCallback(() => {
+  const handlePaste = useCallback((event?: MouseEvent | ClipboardEvent) => {
     if (ReferRef.current) {
-      ReferRef.current.pasteElement();
+      const point = ReferRef.current.canvas.getScenePoint(event as MouseEvent);
+      ReferRef.current.pasteElement(undefined, point);
     }
   }, []);
 
@@ -899,7 +906,7 @@ const ReferCanvas = () => {
   }, []);
 
   // 定义菜单项
-  const getMenuItems = useCallback(() => {
+  const getMenuItems: () => MenuList = useCallback(() => {
     const Refer = ReferRef.current;
     const hasActiveObject = Refer?.getActiveObject();
 
@@ -944,6 +951,7 @@ const ReferCanvas = () => {
         e.preventDefault();
 
         setContextMenu({
+          event: e,
           visible: true,
           position: { x: e.clientX, y: e.clientY },
         });
@@ -953,6 +961,75 @@ const ReferCanvas = () => {
 
       return () => {
         canvasElement.removeEventListener('contextmenu', handleContextMenu);
+      };
+    }
+  }, []);
+
+  // 对象拖拽时按住Option/Ctrl键复制的功能
+  useEffect(() => {
+    const Refer = ReferRef.current;
+    if (Refer) {
+      let cloneCreated = false;
+      let originalObject: FabricObject | null = null;
+
+      const handleObjectMoving = (e: TEvent & { target: FabricObject }) => {
+        // 按住 Option 键 或 Ctrl 键
+        const isOptionKeyPressed = e.e.altKey || e.e.metaKey;
+
+        if (isOptionKeyPressed && !cloneCreated && e.target) {
+          // 保存原始对象并标记已创建克隆
+          originalObject = e.target;
+          cloneCreated = true;
+
+          // TODO: 设置鼠标样式
+          // Refer.canvas.set({
+          //   hoverCursor: 'copy',
+          //   movingCursor: 'copy'
+          // });
+
+          // 因为复制是异步的，所以需要先获取原始对象的位置
+          const originalPosition = {
+            left: originalObject.left,
+            top: originalObject.top
+          };
+
+          // 克隆对象, 复制一份元素，保留在原来的位置上
+          originalObject.clone().then((cloned: FabricObject) => {
+            let clonedObjects: FabricObject[];
+
+            // 使用原始对象的位置设置克隆对象
+            cloned.set(originalPosition);
+
+            // 如果克隆对象多个元素的选中状态
+            if (cloned.type === 'activeselection') {
+              clonedObjects = (cloned as ActiveSelection).getObjects();
+            } else {
+              clonedObjects = [cloned];
+            }
+
+            // 获取 originalObject 的 index
+            const index = Refer.canvas.getObjects().indexOf(originalObject as FabricObject);
+
+            // 添加到画布并选中
+            Refer.canvas.insertAt(index, ...clonedObjects);
+            Refer.canvas.requestRenderAll();
+          });
+        }
+      };
+
+      const handleObjectModified = () => {
+        // 重置标记，为下一次操作做准备
+        cloneCreated = false;
+        originalObject = null;
+      };
+
+      // 添加Fabric事件监听
+      Refer.addEventListener('object:moving', handleObjectMoving); // 移动对象
+      Refer.addEventListener('object:modified', handleObjectModified); // 移动完成
+
+      return () => {
+        Refer.removeEventListener('object:moving', handleObjectMoving);
+        Refer.removeEventListener('object:modified', handleObjectModified);
       };
     }
   }, []);
@@ -993,6 +1070,7 @@ const ReferCanvas = () => {
         items={getMenuItems()}
         visible={contextMenu.visible}
         position={contextMenu.position}
+        event={contextMenu.event}
         onClose={() => setContextMenu(prev => ({ ...prev, visible: false }))}
       />
     </div>

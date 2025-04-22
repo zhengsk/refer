@@ -8,7 +8,7 @@ interface MenuPosition {
 
 export interface MenuItem {
   label: string;
-  onClick: () => void;
+  onClick: (event?: MouseEvent | ClipboardEvent) => void;
   icon?: React.ReactNode;
   disabled?: boolean;
 }
@@ -17,10 +17,13 @@ export interface MenuDivider {
   divider: boolean;
 }
 
+export type MenuList = (MenuItem | MenuDivider)[];
+
 interface ContextMenuProps {
   items: (MenuItem | MenuDivider)[];
   visible: boolean;
   position: MenuPosition;
+  event: MouseEvent | undefined;
   onClose: () => void;
 }
 
@@ -28,6 +31,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   items,
   visible,
   position,
+  event,
   onClose,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -67,7 +71,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
             className={`${styles.menuItem} ${item.disabled ? styles.disabled : ''}`}
             onClick={() => {
               if (!item.disabled) {
-                item.onClick();
+                item.onClick(event);
                 onClose();
               }
             }}
