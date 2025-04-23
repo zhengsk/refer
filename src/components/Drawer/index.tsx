@@ -61,10 +61,9 @@ const Drawer: React.FC<DrawerProps> = ({
         <div className={styles.drawerContent}>
           {children}
         </div>
-        <div className={styles.drawerControls}>
+        <div className={styles.drawerControls} onClick={togglePanel}>
           <button
             className={`${styles.drawerControlButton} ${styles.toggleButton}`}
-            onClick={togglePanel}
             title={isVisible ? "收起侧边栏" : "展开侧边栏"}
           >
             <span className={styles.arrowIcon}>
