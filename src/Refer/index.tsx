@@ -9,7 +9,7 @@ import Toolbar from '../components/toolbar';
 import ContextMenu from '../components/context-menu';
 import type { MenuList } from '../components/context-menu';
 import { REFER_CLIPBOARD_TYPE, REFER_EMPTY } from '../constants/clipboard';
-
+import Drawer from '../components/Drawer';
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
 
@@ -1064,6 +1064,14 @@ const ReferCanvas = () => {
         importRefer={importRefer}
         exportRefer={exportRefer}
       />
+
+      {/* 右侧栏 */}
+      <Drawer
+        isOpen={true}
+        position='right'
+      >
+        <div>右侧栏</div>
+      </Drawer>
 
       {/* 添加右键菜单 */}
       <ContextMenu
