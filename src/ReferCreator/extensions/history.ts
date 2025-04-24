@@ -1,5 +1,6 @@
 import { Canvas } from 'fabric';
 
+
 // 扩展类型声明
 declare module 'fabric' {
   interface CanvasEvents {

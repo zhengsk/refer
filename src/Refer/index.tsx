@@ -10,6 +10,7 @@ import ContextMenu from '../components/context-menu';
 import type { MenuList } from '../components/context-menu';
 import { REFER_CLIPBOARD_TYPE, REFER_EMPTY } from '../constants/clipboard';
 import Drawer from '../components/Drawer';
+import Property from '../components/Property';
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
 
@@ -17,6 +18,7 @@ const ReferCanvas = () => {
   const ReferRef = useRef<ReferCreator>();
   const canvasEl = useRef<HTMLCanvasElement | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [selectedElements, setSelectedElements] = useState<FabricObject[] | undefined>(undefined);
   // const {isFitviewMode, setIsFitViewMode} = useState(false);
   const element = document;
 
@@ -1034,6 +1036,23 @@ const ReferCanvas = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const Refer = ReferRef.current;
+    if (Refer) {
+      Refer.addEventListener('selection:created', (e: any) => {
+        setSelectedElements(e.selected);
+      });
+
+      Refer.addEventListener('selection:updated', (e: any) => {
+        setSelectedElements(e.selected);
+      });
+
+      Refer.addEventListener('selection:cleared', (e: any) => {
+        setSelectedElements(undefined);
+      });
+    }
+  }, []);
+
   return (
     <div>
       <canvas
@@ -1067,10 +1086,12 @@ const ReferCanvas = () => {
 
       {/* 右侧栏 */}
       <Drawer
-        isOpen={true}
+        isOpen={selectedElements !== undefined}
         position='right'
       >
-        <div>右侧栏</div>
+        <Property
+          elements={selectedElements}
+        />
       </Drawer>
 
       {/* 添加右键菜单 */}
