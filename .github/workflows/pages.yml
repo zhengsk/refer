@@ -40,11 +40,11 @@ jobs:
         run: npm run build
 
       # 可选：如果您想将构建结果上传为工件
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-files
-          path: dist/
+      # - name: Upload build artifacts
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: build-files
+      #     path: dist/
 
       # 设置阿里云OSS工具
       - name: Setup ossutil
