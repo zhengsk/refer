@@ -1,6 +1,6 @@
 # 自动构建React TypeScript项目的GitHub Actions工作流
 
-name: Build React App
+name: Deploy To OSS -> refer.laterc.com
 
 # 控制工作流何时运行
 on:
