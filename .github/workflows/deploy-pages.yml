@@ -6,32 +6,35 @@ on:
     branches:
       - master
 
+  # 允许从Actions选项卡手动运行此工作流
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    # Step 1: 检出代码
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # Step 1: 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    # Step 2: 设置 Node.js 环境
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'  # 你可以根据需要修改 Node 版本
+      # Step 2: 设置 Node.js 环境
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # 你可以根据需要修改 Node 版本
 
-    # Step 3: 安装依赖
-    - name: Install dependencies
-      run: npm install
+      # Step 3: 安装依赖
+      - name: Install dependencies
+        run: npm ci
 
-    # Step 4: 构建项目
-    - name: Build the project
-      run: npm run build
+      # Step 4: 构建项目
+      - name: Build the project
+        run: npm run build
 
-    # Step 5: 部署到 GitHub Pages
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}  # 自动获取 GitHub token
-        publish_dir: ./dist  # 你构建的文件目录，假设是 /dist
+      # Step 5: 部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }} # 自动获取 GitHub token
+          publish_dir: ./dist # 你构建的文件目录，假设是 /dist
