@@ -10,29 +10,39 @@ export interface PropertyProps {
 const Drawer: React.FC<PropertyProps> = ({
   elements,
 }) => {
-  const [imageSrcs, setImageSrcs] = useState<string[]>([]);
+  const [imageElements, setImageElements] = useState<FabricImage[]>([]);
 
   useEffect(() => {
     if (elements?.length) {
-      const imageSrcs = elements.map((element) => {
-        if (element.type === 'image') {
-          return (element as FabricImage).getSrc();
-        }
-        return '';
+      const imageElements = elements.filter((element) => {
+        return element.type === 'image';
       });
-      setImageSrcs(imageSrcs);
+      setImageElements(imageElements as FabricImage[]);
     }
   }, [elements]);
 
   return (
     <div className={styles.container}>
+      {/* 显示图片 */}
       <div className={styles.imageContainer}>
-        {imageSrcs.map((imageSrc) => (
+        {imageElements.map((element) => (
           <div className={styles.image}>
-            <img src={imageSrc} />
+            <img src={element.getSrc()} />
           </div>
         ))}
+
       </div>
+
+      {/* 显示图片尺寸 */}
+      {imageElements.length === 1 && (
+        <div className={styles.empty}>
+          {/* 显示图片尺寸 */}
+          <div className={styles.size}>
+            <div>宽：{imageElements[0].width} px</div>
+            <div>高：{imageElements[0].height} px</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
