@@ -1,36 +1,59 @@
-# This is a basic workflow to help you get started with Actions
+# 自动构建React TypeScript项目的GitHub Actions工作流
 
-name: CI
+name: Build React App
 
-# Controls when the workflow will run
+# 控制工作流何时运行
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
+  # 仅在推送到master分支时触发工作流
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    branches: ['master']
 
-  # Allows you to run this workflow manually from the Actions tab
+  # 允许从Actions选项卡手动运行此工作流
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+# 工作流运行由一个或多个作业组成，这些作业可以顺序或并行运行
 jobs:
-  # This workflow contains a single job called "build"
+  # 此工作流包含一个名为"build"的作业
   build:
-    # The type of runner that the job will run on
+    # 作业将在的运行器类型
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    # 步骤表示将作为作业的一部分执行的任务序列
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      # 检出您的仓库到$GITHUB_WORKSPACE，以便您的作业可以访问它
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      # 设置Node.js环境
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+      # 安装依赖
+      - name: Install dependencies
+        run: npm ci
+
+      # 构建项目
+      - name: Build
+        run: npm run build
+
+      # 可选：如果您想将构建结果上传为工件
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-files
+          path: dist/
+
+      # 设置阿里云OSS工具
+      - name: Setup ossutil
+        uses: manyuanrong/setup-ossutil@v2.0
+        with:
+          endpoint: ${{ secrets.OSS_ENDPOINT }}
+          access-key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+
+      # 上传构建文件到阿里云OSS
+      - name: Upload to OSS
+        run: ossutil cp -rf dist/ oss://${{ secrets.OSS_BUCKET }}/ --meta=Cache-Control:max-age=864000
