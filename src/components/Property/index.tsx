@@ -7,6 +7,16 @@ export interface PropertyProps {
   elements: FabricObject[] | undefined;
 }
 
+// 获取图片格式
+const getImageFormat = (src: string) => {
+  // base64 图片格式
+  if (src.startsWith('data:image/')) {
+    return src.split(';')[0].split('/')[1];
+  }
+
+  return src.split('.').pop();
+};
+
 const Drawer: React.FC<PropertyProps> = ({
   elements,
 }) => {
@@ -36,10 +46,12 @@ const Drawer: React.FC<PropertyProps> = ({
       {/* 显示图片尺寸 */}
       {imageElements.length === 1 && (
         <div className={styles.empty}>
-          {/* 显示图片尺寸 */}
-          <div className={styles.size}>
-            <div>宽：{imageElements[0].width} px</div>
-            <div>高：{imageElements[0].height} px</div>
+          <div>
+            {/* 显示图片尺寸 */}
+            <div>尺寸：{imageElements[0].width}px x {imageElements[0].height}px</div>
+
+            {/* 显示图片颜色 */}
+            <div>下载图片：<a href={imageElements[0].getSrc()} download>下载</a></div>
           </div>
         </div>
       )}
