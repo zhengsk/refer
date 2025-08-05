@@ -3,6 +3,7 @@ import type { TEvent, FabricObject, TPointerEvent, IText } from 'fabric/fabric-i
 import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from '../ReferCreator';
 import { saveAs, fileOpen } from '../utils/fileAccess';
+import { db } from '../db';
 import styles from './index.module.less';
 import { useShortcut } from '../utils/useShortcut';
 import Toolbar from '../components/toolbar';
@@ -765,7 +766,7 @@ const ReferCanvas = () => {
     keys: ['meta+s', 'ctrl+s'],
     callback: async (e: KeyboardEvent) => {
       e.preventDefault();
-      exportRefer();
+      saveRefer();
     },
     element,
   });
@@ -786,13 +787,51 @@ const ReferCanvas = () => {
     }
   }, []);
 
+  // 从数据库加载数据
+  const loadFromDatabase = useCallback(async () => {
+    if (ReferRef.current) {
+      try {
+        // 获取最新的数据
+        const latestRefer = await db.refers.orderBy('updatedAt').reverse().first();
+        if (latestRefer) {
+          const jsonData = JSON.parse(latestRefer.content);
+          return ReferRef.current.loadJSON(jsonData);
+        }
+      } catch (error) {
+        console.error('从数据库加载数据失败:', error);
+      }
+    }
+  }, []);
+
+  // 保存 refer 文件到数据库
+  const saveRefer = useCallback(async () => {
+    if (ReferRef.current) {
+      const jsonData = ReferRef.current.exportJSON();
+      const title = `Refer_${new Date().toLocaleString()}`;
+      const content = JSON.stringify(jsonData);
+      const now = Date.now();
+
+      try {
+        await db.refers.add({
+          title,
+          content,
+          createdAt: now,
+          updatedAt: now,
+        });
+        console.info('数据已保存到数据库');
+      } catch (error) {
+        console.error('保存到数据库失败:', error);
+      }
+    }
+  }, []);
+
   // 键盘：Open Command + o
   useShortcut({
     keys: ['meta+o', 'ctrl+o'],
     callback: async (e: KeyboardEvent) => {
       e.preventDefault();
       if (ReferRef.current) {
-        importRefer();
+        loadFromDatabase();
       }
     },
     element,
@@ -1083,6 +1122,8 @@ const ReferCanvas = () => {
       <Toolbar
         importRefer={importRefer}
         exportRefer={exportRefer}
+        saveRefer={saveRefer}
+        loadFromDatabase={loadFromDatabase}
       />
 
       {/* 右侧栏 */}
