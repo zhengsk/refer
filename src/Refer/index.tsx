@@ -19,6 +19,7 @@ const ReferCanvas = () => {
   const canvasEl = useRef<HTMLCanvasElement | null>(null);
   const [zoom, setZoom] = useState(1);
   const [selectedElements, setSelectedElements] = useState<FabricObject[] | undefined>(undefined);
+  const [isPropertyLocked, setIsPropertyLocked] = useState(false);
   // const {isFitviewMode, setIsFitViewMode} = useState(false);
   const element = document;
 
@@ -1086,11 +1087,13 @@ const ReferCanvas = () => {
 
       {/* 右侧栏 */}
       <Drawer
-        isOpen={selectedElements !== undefined}
+        isOpen={selectedElements !== undefined || isPropertyLocked}
         position='right'
       >
         <Property
           elements={selectedElements}
+          isLocked={isPropertyLocked}
+          onLockChange={setIsPropertyLocked}
         />
       </Drawer>
 
