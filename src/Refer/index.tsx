@@ -21,6 +21,7 @@ const ReferCanvas = () => {
   const [zoom, setZoom] = useState(1);
   const [selectedElements, setSelectedElements] = useState<FabricObject[] | undefined>(undefined);
   const [isPropertyLocked, setIsPropertyLocked] = useState(false);
+  const [currentReferId, setCurrentReferId] = useState<number | null>(null);
   // const {isFitviewMode, setIsFitViewMode} = useState(false);
   const element = document;
 
@@ -34,6 +35,7 @@ const ReferCanvas = () => {
     event: undefined,
   });
 
+  // 初始化一个画布
   useEffect(() => {
     const options = { preserveObjectStacking: true };
     const Refer = new ReferCreator(canvasEl.current as HTMLCanvasElement, options);
@@ -49,29 +51,34 @@ const ReferCanvas = () => {
       (element as any).referIsTextEditing = false;
     });
 
-    // 添加一个红色矩形
-    const rect = new Rect({
-      left: -100,
-      top: -100,
-      fill: 'red',
-      width: 200,
-      height: 200,
-    });
-    Refer.canvas.add(rect);
+    // 加载数据库中的refer
+    try {
+      loadFromDatabase();
+    } catch (error) {
+      // 添加一个红色矩形
+      const rect = new Rect({
+        left: -100,
+        top: -100,
+        fill: 'red',
+        width: 200,
+        height: 200,
+      });
+      Refer.canvas.add(rect);
 
-    // 添加图片
-    Refer.addImgFromURL({
-      src: 'https://gd-hbimg.huaban.com/13b957418c1f59260285f0ba664fd222b2c78fd581db-ElxX5H_fw1200',
-      inVpCenter: true,
-    });
-    Refer.addImgFromURL({
-      src: 'https://gd-hbimg.huaban.com/54a1785cfc4b7d196884a63fdc510d85ab323fb039ffb-fxWgbl',
-      inVpCenter: true,
-    });
-    Refer.addImgFromURL({
-      src: 'https://gd-hbimg.huaban.com/608c2098a0dc521aaf7294df06409fd0c3cc503c4bc04-DgtQ5V',
-      inVpCenter: true,
-    });
+      // 添加图片
+      Refer.addImgFromURL({
+        src: 'https://gd-hbimg.huaban.com/13b957418c1f59260285f0ba664fd222b2c78fd581db-ElxX5H_fw1200',
+        inVpCenter: true,
+      });
+      Refer.addImgFromURL({
+        src: 'https://gd-hbimg.huaban.com/54a1785cfc4b7d196884a63fdc510d85ab323fb039ffb-fxWgbl',
+        inVpCenter: true,
+      });
+      Refer.addImgFromURL({
+        src: 'https://gd-hbimg.huaban.com/608c2098a0dc521aaf7294df06409fd0c3cc503c4bc04-DgtQ5V',
+        inVpCenter: true,
+      });
+    }
 
     return () => {
       Refer.dispose();
@@ -766,7 +773,7 @@ const ReferCanvas = () => {
     keys: ['meta+s', 'ctrl+s'],
     callback: async (e: KeyboardEvent) => {
       e.preventDefault();
-      saveRefer();
+      saveReferFile();
     },
     element,
   });
@@ -795,7 +802,10 @@ const ReferCanvas = () => {
         const latestRefer = await db.refers.orderBy('updatedAt').reverse().first();
         if (latestRefer) {
           const jsonData = JSON.parse(latestRefer.content);
-          return ReferRef.current.loadJSON(jsonData);
+          await ReferRef.current.loadJSON(jsonData);
+          // 记录当前加载的文件ID
+          setCurrentReferId(latestRefer.id);
+          console.info('从数据库加载数据成功，文件ID:', latestRefer.id);
         }
       } catch (error) {
         console.error('从数据库加载数据失败:', error);
@@ -803,27 +813,61 @@ const ReferCanvas = () => {
     }
   }, []);
 
-  // 保存 refer 文件到数据库
-  const saveRefer = useCallback(async () => {
+  // 共用的保存函数
+  const saveReferFile = useCallback(async ({ forceNew = false }: { forceNew?: boolean } = {}) => {
     if (ReferRef.current) {
       const jsonData = ReferRef.current.exportJSON();
-      const title = `Refer_${new Date().toLocaleString()}`;
       const content = JSON.stringify(jsonData);
       const now = Date.now();
 
       try {
-        await db.refers.add({
-          title,
-          content,
-          createdAt: now,
-          updatedAt: now,
-        });
-        console.info('数据已保存到数据库');
+        if (currentReferId && !forceNew) {
+          // 更新现有文件
+          await db.refers.update(currentReferId, {
+            content,
+            updatedAt: now,
+          });
+          console.info('数据已更新到数据库，文件ID:', currentReferId);
+        } else {
+          // 创建新文件
+          const title = `Refer_${new Date().toLocaleString()}`;
+          const newReferFileId = await db.refers.add({
+            title,
+            content,
+            createdAt: now,
+            updatedAt: now,
+          });
+          console.info('数据已保存到数据库，新文件ID:', newReferFileId);
+          return newReferFileId;
+        }
       } catch (error) {
         console.error('保存到数据库失败:', error);
       }
     }
-  }, []);
+  }, [currentReferId]);
+
+  // 新建画布
+  const newCanvas = useCallback(async () => {
+    if (ReferRef.current) {
+      try {
+        // 清空当前画布
+        ReferRef.current.canvas.clear();
+
+        // 重置当前文件ID，表示这是一个新文件
+        setCurrentReferId(null);
+
+        // 立即保存数据到数据库，强制创建新文件
+        const newReferFileId = await saveReferFile({ forceNew: true });
+
+        if (newReferFileId) {
+          setCurrentReferId(newReferFileId);
+          console.info('新建画布成功');
+        }
+      } catch (error) {
+        console.error('新建画布失败:', error);
+      }
+    }
+  }, [saveReferFile]);
 
   // 键盘：Open Command + o
   useShortcut({
@@ -833,6 +877,16 @@ const ReferCanvas = () => {
       if (ReferRef.current) {
         loadFromDatabase();
       }
+    },
+    element,
+  });
+
+  // 键盘：New Command + n
+  useShortcut({
+    keys: ['meta+n', 'ctrl+n'],
+    callback: async (e: KeyboardEvent) => {
+      e.preventDefault();
+      newCanvas();
     },
     element,
   });
@@ -1122,8 +1176,9 @@ const ReferCanvas = () => {
       <Toolbar
         importRefer={importRefer}
         exportRefer={exportRefer}
-        saveRefer={saveRefer}
+        saveRefer={saveReferFile}
         loadFromDatabase={loadFromDatabase}
+        newCanvas={newCanvas}
       />
 
       {/* 右侧栏 */}

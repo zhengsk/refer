@@ -10,7 +10,7 @@ const LoadTool: React.FC<{ callback: () => void }> = ({ callback }) => {
   return (
     <Tooltip content="从数据库加载" position="bottom">
       <Icon
-        name="download-2-fill"
+        name="open-refer"
         onClick={handleLoad}
       />
     </Tooltip>

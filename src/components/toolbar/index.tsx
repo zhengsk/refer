@@ -6,6 +6,7 @@ import ImportTool from '../Tools/import';
 import ExportTool from '../Tools/export';
 import SaveTool from '../Tools/save';
 import LoadTool from '../Tools/load';
+import NewTool from '../Tools/new';
 import Refer from '../../ReferCreator';
 
 const Toolbar: React.FC<{
@@ -13,14 +14,19 @@ const Toolbar: React.FC<{
   exportRefer: () => void;
   saveRefer: () => void;
   loadFromDatabase: () => void;
+  newCanvas: () => void;
 }> = ({
   importRefer,
   exportRefer,
   saveRefer,
   loadFromDatabase,
+  newCanvas,
 }) => {
     return (
       <div className={styles.toolbar}>
+        <div className={styles.toolbarItem}>
+          <NewTool callback={newCanvas} />
+        </div>
         <div className={styles.toolbarItem}>
           <SaveTool callback={saveRefer} />
         </div>
