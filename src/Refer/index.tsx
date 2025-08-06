@@ -12,6 +12,8 @@ import type { MenuList } from '../components/context-menu';
 import { REFER_CLIPBOARD_TYPE, REFER_EMPTY } from '../constants/clipboard';
 import Drawer from '../components/Drawer';
 import Property from '../components/Property';
+import { useAutoSave } from '../utils/autoSave';
+import AutoSaveIndicator from '../components/AutoSaveIndicator';
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
 
@@ -22,6 +24,12 @@ const ReferCanvas = () => {
   const [selectedElements, setSelectedElements] = useState<FabricObject[] | undefined>(undefined);
   const [isPropertyLocked, setIsPropertyLocked] = useState(false);
   const [currentReferId, setCurrentReferId] = useState<number | null>(null);
+  const [autoSaveState, setAutoSaveState] = useState({
+    isSaving: false,
+    lastSaveTime: null as number | null,
+    errorCount: 0,
+    pendingChanges: false
+  });
   // const {isFitviewMode, setIsFitViewMode} = useState(false);
   const element = document;
 
@@ -773,7 +781,7 @@ const ReferCanvas = () => {
     keys: ['meta+s', 'ctrl+s'],
     callback: async (e: KeyboardEvent) => {
       e.preventDefault();
-      saveReferFile();
+      await forceSave();
     },
     element,
   });
@@ -799,13 +807,13 @@ const ReferCanvas = () => {
     if (ReferRef.current) {
       try {
         // 获取最新的数据
-        const latestRefer = await db.refers.orderBy('updatedAt').reverse().first();
-        if (latestRefer) {
-          const jsonData = JSON.parse(latestRefer.content);
+        const latestReferFile = await db.refers.orderBy('updatedAt').reverse().first();
+        if (latestReferFile) {
+          const jsonData = JSON.parse(latestReferFile.content);
           await ReferRef.current.loadJSON(jsonData);
           // 记录当前加载的文件ID
-          setCurrentReferId(latestRefer.id);
-          console.info('从数据库加载数据成功，文件ID:', latestRefer.id);
+          setCurrentReferId(latestReferFile.id);
+          console.info('从数据库加载数据成功，文件ID:', latestReferFile.id);
         }
       } catch (error) {
         console.error('从数据库加载数据失败:', error);
@@ -845,6 +853,74 @@ const ReferCanvas = () => {
       }
     }
   }, [currentReferId]);
+
+  // 自动保存功能
+  const { save: triggerAutoSave, forceSave } = useAutoSave(
+    saveReferFile,
+    {
+      throttle: 5000, // 5秒节流
+      maxRetries: 3,
+      retryDelay: 2000,
+      onSaveStart: () => {
+        setAutoSaveState(prev => ({ ...prev, isSaving: true }));
+      },
+      onSaveSuccess: () => {
+        setAutoSaveState(prev => ({
+          ...prev,
+          isSaving: false,
+          lastSaveTime: Date.now(),
+          errorCount: 0,
+          pendingChanges: false,
+        }));
+      },
+      onSaveError: (error) => {
+        console.error('自动保存失败:', error);
+        setAutoSaveState(prev => ({
+          ...prev,
+          isSaving: false,
+          errorCount: prev.errorCount + 1
+        }));
+      },
+      onSaveComplete: () => {
+        setAutoSaveState(prev => ({ ...prev, isSaving: false }));
+      }
+    }
+  );
+
+  // 页面卸载时强制保存
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (autoSaveState.pendingChanges) {
+        forceSave();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [forceSave, autoSaveState.pendingChanges]);
+
+  // 监听画布变化事件
+  useEffect(() => {
+    const Refer = ReferRef.current;
+    if (Refer) {
+      const handleCanvasModified = () => {
+        setAutoSaveState(prev => ({ ...prev, pendingChanges: true }));
+        triggerAutoSave();
+      };
+
+      Refer.addEventListener('object:modified', handleCanvasModified);
+      Refer.addEventListener('object:added', handleCanvasModified);
+      Refer.addEventListener('object:removed', handleCanvasModified);
+
+      return () => {
+        Refer.removeEventListener('object:modified', handleCanvasModified);
+        Refer.removeEventListener('object:added', handleCanvasModified);
+        Refer.removeEventListener('object:removed', handleCanvasModified);
+      };
+    }
+  }, [triggerAutoSave]);
 
   // 新建画布
   const newCanvas = useCallback(async () => {
@@ -1172,11 +1248,15 @@ const ReferCanvas = () => {
         {`${Math.floor(zoom * 100)}%`}
       </div>
 
+      {/* 自动保存状态指示器 */}
+      <div className={styles.autoSaveStatus}>
+        <AutoSaveIndicator {...autoSaveState} />
+      </div>
+
       {/* 工具栏 */}
       <Toolbar
         importRefer={importRefer}
         exportRefer={exportRefer}
-        saveRefer={saveReferFile}
         loadFromDatabase={loadFromDatabase}
         newCanvas={newCanvas}
       />
