@@ -5,21 +5,21 @@ import FullscreenTool from '../Tools/fullscreen';
 import ImportTool from '../Tools/import';
 import ExportTool from '../Tools/export';
 import SaveTool from '../Tools/save';
-import LoadTool from '../Tools/load';
 import NewTool from '../Tools/new';
+import RecentTool from '../Tools/recent';
 
 const Toolbar: React.FC<{
   importRefer?: () => void;
   exportRefer?: () => void;
   saveRefer?: () => void;
-  loadFromDatabase?: () => void;
   newCanvas?: () => void;
+  showRecentFiles?: () => void;
 }> = ({
   importRefer,
   exportRefer,
   saveRefer,
-  loadFromDatabase,
   newCanvas,
+  showRecentFiles,
 }) => {
     return (
       <div className={styles.toolbar}>
@@ -40,10 +40,10 @@ const Toolbar: React.FC<{
           )
         }
         {
-          // 打开文件，加载数据库最近的文件
-          loadFromDatabase && (
+          // 最近文件
+          showRecentFiles && (
             <div className={styles.toolbarItem}>
-              <LoadTool callback={loadFromDatabase} />
+              <RecentTool callback={showRecentFiles} />
             </div>
           )
         }

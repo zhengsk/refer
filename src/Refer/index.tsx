@@ -14,6 +14,8 @@ import Drawer from '../components/Drawer';
 import Property from '../components/Property';
 import { useAutoSave } from '../utils/autoSave';
 import AutoSaveIndicator from '../components/AutoSaveIndicator';
+import RecentFiles from '../components/RecentFiles';
+import type { Refers } from '../db';
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
 
@@ -30,6 +32,7 @@ const ReferCanvas = () => {
     errorCount: 0,
     pendingChanges: false
   });
+  const [recentFilesVisible, setRecentFilesVisible] = useState(false);
   // const {isFitviewMode, setIsFitViewMode} = useState(false);
   const element = document;
 
@@ -821,6 +824,39 @@ const ReferCanvas = () => {
     }
   }, []);
 
+  // 加载指定文件
+  const loadFile = useCallback(async (file: Refers) => {
+    if (ReferRef.current) {
+      try {
+        const jsonData = JSON.parse(file.content);
+        await ReferRef.current.loadJSON(jsonData);
+        setCurrentReferId(file.id);
+        console.info('加载文件成功，文件ID:', file.id);
+      } catch (error) {
+        console.error('加载文件失败:', error);
+      }
+    }
+  }, []);
+
+  // 显示最近文件
+  const showRecentFiles = useCallback(() => {
+    setRecentFilesVisible(true);
+  }, []);
+
+  // 重命名文件
+  const renameFile = useCallback(async (file: Refers, newTitle: string) => {
+    try {
+      await db.refers.update(file.id, {
+        title: newTitle,
+        updatedAt: Date.now()
+      });
+      console.info('文件重命名成功');
+    } catch (error) {
+      console.error('文件重命名失败:', error);
+      throw error;
+    }
+  }, []);
+
   // 共用的保存函数
   const saveReferFile = useCallback(async ({ forceNew = false }: { forceNew?: boolean } = {}) => {
     if (ReferRef.current) {
@@ -1257,8 +1293,8 @@ const ReferCanvas = () => {
       <Toolbar
         importRefer={importRefer}
         exportRefer={exportRefer}
-        loadFromDatabase={loadFromDatabase}
         newCanvas={newCanvas}
+        showRecentFiles={showRecentFiles}
       />
 
       {/* 右侧栏 */}
@@ -1280,6 +1316,14 @@ const ReferCanvas = () => {
         position={contextMenu.position}
         event={contextMenu.event}
         onClose={() => setContextMenu(prev => ({ ...prev, visible: false }))}
+      />
+
+      {/* 最近文件 */}
+      <RecentFiles
+        visible={recentFilesVisible}
+        onClose={() => setRecentFilesVisible(false)}
+        onSelect={loadFile}
+        onRename={renameFile}
       />
     </div>
   )

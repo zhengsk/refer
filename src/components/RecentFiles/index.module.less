@@ -1,0 +1,244 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  background: #2c2c2c;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  min-width: 400px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: slideIn 0.2s ease-out;
+  color: #e8e8e8;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #404040;
+  background: #1e1e1e;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #e8e8e8;
+  }
+
+  .closeButton {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #808080;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #404040;
+      color: #e8e8e8;
+    }
+  }
+}
+
+.content {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.loading {
+  padding: 40px 20px;
+  text-align: center;
+  color: #808080;
+  font-size: 14px;
+}
+
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #808080;
+  font-size: 14px;
+}
+
+.fileList {
+  padding: 6px 0;
+}
+
+.fileItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #404040;
+
+  &:hover {
+    background: #404040;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.fileInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e8e8e8;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileDate {
+  font-size: 12px;
+  color: #808080;
+}
+
+.fileActions {
+  margin-left: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.renameButton {
+  background: #404040;
+  color: #e8e8e8;
+  border: 1px solid #606060;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #505050;
+    border-color: #707070;
+  }
+
+  &:active {
+    background: #303030;
+  }
+}
+
+.loadButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #0056b3;
+  }
+
+  &:active {
+    background: #004085;
+  }
+}
+
+.editContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.editInput {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #606060;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  background: #1e1e1e;
+  color: #e8e8e8;
+
+  &:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
+
+  &::placeholder {
+    color: #808080;
+  }
+}
+
+.editActions {
+  display: flex;
+  gap: 4px;
+}
+
+.saveButton {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #218838;
+  }
+
+  &:active {
+    background: #1e7e34;
+  }
+}
+
+.cancelButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #c82333;
+  }
+
+  &:active {
+    background: #bd2130;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+} 
