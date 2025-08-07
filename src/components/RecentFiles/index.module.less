@@ -45,8 +45,10 @@
     font-size: 20px;
     color: #808080;
     cursor: pointer;
-    padding: 4px;
+    padding: 0;
     border-radius: 4px;
+    width: 32px;
+    height: 32px;
     transition: all 0.2s;
 
     &:hover {
@@ -84,7 +86,6 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 20px;
-  cursor: pointer;
   transition: background-color 0.2s;
   border-bottom: 1px solid #404040;
 
@@ -100,6 +101,7 @@
 .fileInfo {
   flex: 1;
   min-width: 0;
+  margin-right: 32px;
 }
 
 .fileTitle {
@@ -110,6 +112,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: text;
+  border-bottom: 1px solid transparent;
+
+  &:hover {
+    border-bottom: 1px solid #c0c0c0;
+  }
 }
 
 .fileDate {
@@ -123,31 +131,11 @@
   gap: 8px;
 }
 
-.renameButton {
-  background: #404040;
-  color: #e8e8e8;
-  border: 1px solid #606060;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: #505050;
-    border-color: #707070;
-  }
-
-  &:active {
-    background: #303030;
-  }
-}
-
 .loadButton {
   background: #007bff;
   color: white;
   border: none;
-  padding: 6px 12px;
+  padding: 8px 20px;
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
@@ -186,49 +174,6 @@
 
   &::placeholder {
     color: #808080;
-  }
-}
-
-.editActions {
-  display: flex;
-  gap: 4px;
-}
-
-.saveButton {
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: #218838;
-  }
-
-  &:active {
-    background: #1e7e34;
-  }
-}
-
-.cancelButton {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: #c82333;
-  }
-
-  &:active {
-    background: #bd2130;
   }
 }
 

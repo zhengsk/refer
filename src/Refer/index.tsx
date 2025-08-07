@@ -1299,7 +1299,7 @@ const ReferCanvas = () => {
 
       {/* 右侧栏 */}
       <Drawer
-        isOpen={selectedElements !== undefined || isPropertyLocked}
+        isOpen={isPropertyLocked}
         position='right'
       >
         <Property

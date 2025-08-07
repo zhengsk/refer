@@ -26,16 +26,17 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
     if (visible) {
       loadRecentFiles();
 
-      // 阻止冒泡
-      const eventHandler = (e: MouseEvent | KeyboardEvent) => {
+      const stopPropagation = (e: MouseEvent | KeyboardEvent) => {
         e.stopPropagation();
       };
-      document.addEventListener('mousedown', eventHandler, { capture: true });
-      document.addEventListener('keydown', eventHandler, { capture: true });
+
+      // 阻止冒泡
+      overlayRef.current?.addEventListener('mousedown', stopPropagation);
+      overlayRef.current?.addEventListener('keydown', stopPropagation);
 
       return () => {
-        document.removeEventListener('mousedown', eventHandler, { capture: true });
-        document.removeEventListener('keydown', eventHandler, { capture: true });
+        overlayRef.current?.removeEventListener('mousedown', stopPropagation);
+        overlayRef.current?.removeEventListener('keydown', stopPropagation);
       };
     }
   }, [visible]);
@@ -90,6 +91,7 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
     setEditTitle('');
   };
 
+  // 重命名 回车保存 按下esc取消
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSaveRename();
@@ -98,6 +100,7 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
     }
   };
 
+  // 格式化日期
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleString('zh-CN', {
@@ -129,46 +132,27 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
           ) : (
             <div className={styles.fileList}>
               {files.map((file) => (
-                <div
-                  key={file.id}
-                  className={styles.fileItem}
-                  onClick={() => handleFileClick(file)}
-                >
+                <div key={file.id} className={styles.fileItem} >
                   <div className={styles.fileInfo}>
                     {editingFile?.id === file.id ? (
-                      <div className={styles.editContainer}>
+                      <div className={styles.editContainer} onClick={(e) => e.stopPropagation()}>
                         <input
                           type="text"
                           className={styles.editInput}
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
-                          onKeyDown={handleKeyPress}
+                          onKeyDownCapture={(e) => handleKeyPress(e)}
                           onBlur={handleSaveRename}
                           autoFocus
                         />
-                        <div className={styles.editActions}>
-                          <button
-                            className={styles.saveButton}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSaveRename();
-                            }}
-                          >
-                            ✓
-                          </button>
-                          <button
-                            className={styles.cancelButton}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCancelRename();
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
                       </div>
                     ) : (
-                      <div className={styles.fileTitle}>{file.title}</div>
+                      <div
+                        className={styles.fileTitle}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRename(file);
+                        }}>{file.title}</div>
                     )}
                     <div className={styles.fileDate}>
                       {formatDate(file.updatedAt)}
@@ -176,23 +160,13 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
                   </div>
                   <div className={styles.fileActions}>
                     <button
-                      className={styles.renameButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRename(file);
-                      }}
-                      title="重命名"
-                    >
-                      编辑
-                    </button>
-                    <button
                       className={styles.loadButton}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleFileClick(file);
                       }}
                     >
-                      打开文件
+                      打开
                     </button>
                   </div>
                 </div>
