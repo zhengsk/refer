@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { db } from '../../db';
-import type { Refers } from '../../db';
+import db, { type Refers } from '../../db';
 import styles from './index.module.less';
 
 interface RecentFilesProps {
   visible: boolean;
-  currentReferId: number | null;
+  currentFileId: string | null;
   onClose: () => void;
   onSelect: (file: Refers) => void;
   onRename?: (file: Refers, newTitle: string) => void;
@@ -14,7 +13,7 @@ interface RecentFilesProps {
 
 const RecentFiles: React.FC<RecentFilesProps> = ({
   visible,
-  currentReferId,
+  currentFileId,
   onClose,
   onSelect,
   onRename,
@@ -48,13 +47,15 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
   const loadRecentFiles = async () => {
     setLoading(true);
     try {
-      const recentFiles = await db.refers
-        .orderBy('updatedAt')
-        .reverse()
-        .limit(10)
-        .toArray();
+      // 只获取需要的字段，提高性能
+      const recentFiles = await db.refer.list({
+        fields: ['fileId', 'title', 'updatedAt'],
+        limit: 10,
+        orderBy: 'updatedAt',
+        order: 'desc'
+      });
 
-      setFiles(recentFiles);
+      setFiles(recentFiles as Refers[]);
     } catch (error) {
       console.error('加载最近文件失败:', error);
     } finally {
@@ -78,7 +79,7 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
         await onRename(editingFile, editTitle.trim());
         // 更新本地文件列表
         setFiles(prev => prev.map(f =>
-          f.id === editingFile.id
+          f.fileId === editingFile.fileId
             ? { ...f, title: editTitle.trim() }
             : f
         ));
@@ -101,7 +102,7 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
         try {
           await onDelete(file);
           // 从本地文件列表中移除
-          setFiles(prev => prev.filter(f => f.id !== file.id));
+          setFiles(prev => prev.filter(f => f.fileId !== file.fileId));
         } catch (error) {
           console.error('删除文件失败:', error);
         }
@@ -150,9 +151,9 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
           ) : (
             <div className={styles.fileList}>
               {files.map((file) => (
-                <div key={file.id} className={styles.fileItem} >
+                <div key={file.fileId} className={styles.fileItem} >
                   <div className={styles.fileInfo}>
-                    {editingFile?.id === file.id ? (
+                    {editingFile?.fileId === file.fileId ? (
                       <div className={styles.editContainer} onClick={(e) => e.stopPropagation()}>
                         <input
                           type="text"
@@ -171,7 +172,7 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
                           e.stopPropagation();
                           handleRename(file);
                         }}>
-                        <span className={styles.currentFileIcon}>{file.id === currentReferId ? '·' : ''}</span>
+                        <span className={styles.currentFileIcon}>{file.fileId === currentFileId ? '·' : ''}</span>
                         {file.title}
                       </div>
                     )}

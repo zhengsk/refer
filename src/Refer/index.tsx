@@ -3,7 +3,6 @@ import type { TEvent, FabricObject, TPointerEvent, IText } from 'fabric/fabric-i
 import { useRef, useEffect, useState, useCallback } from 'react'
 import ReferCreator from '../ReferCreator';
 import { saveAs, fileOpen } from '../utils/fileAccess';
-import { db } from '../db';
 import styles from './index.module.less';
 import { useShortcut } from '../utils/useShortcut';
 import Toolbar from '../components/toolbar';
@@ -15,7 +14,7 @@ import Property from '../components/Property';
 import { useAutoSave } from '../utils/autoSave';
 import AutoSaveIndicator from '../components/AutoSaveIndicator';
 import RecentFiles from '../components/RecentFiles';
-import type { Refers } from '../db';
+import db, { type Refers } from '../db';
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
 
@@ -25,7 +24,8 @@ const ReferCanvas = () => {
   const [zoom, setZoom] = useState(1);
   const [selectedElements, setSelectedElements] = useState<FabricObject[] | undefined>(undefined);
   const [isPropertyLocked, setIsPropertyLocked] = useState(false);
-  const [currentReferId, setCurrentReferId] = useState<number | null>(null);
+  const [currentFileId, setCurrentFileId] = useState<string | null>(null);
+  const currentFileIdRef = useRef<string>();
   const [autoSaveState, setAutoSaveState] = useState({
     isSaving: false,
     lastSaveTime: null as number | null,
@@ -809,14 +809,26 @@ const ReferCanvas = () => {
   const loadFromDatabase = useCallback(async () => {
     if (ReferRef.current) {
       try {
-        // 获取最新的数据
-        const latestReferFile = await db.refers.orderBy('updatedAt').reverse().first();
-        if (latestReferFile) {
-          const jsonData = JSON.parse(latestReferFile.content);
-          await ReferRef.current.loadJSON(jsonData);
-          // 记录当前加载的文件ID
-          setCurrentReferId(latestReferFile.id);
-          console.info('从数据库加载数据成功，文件ID:', latestReferFile.id);
+        // 获取最新的数据，只获取需要的字段
+        const latestFile = await db.refer.list({
+          fields: ['fileId', 'content'],
+          limit: 1,
+          orderBy: 'updatedAt',
+          order: 'desc'
+        });
+
+        if (latestFile && latestFile.length > 0) {
+          const file = latestFile[0];
+          if (file.fileId && file.content) {
+            const jsonData = JSON.parse(file.content);
+            await ReferRef.current.loadJSON(jsonData);
+
+            // 记录当前加载的文件ID
+            setCurrentFileId(file.fileId);
+            currentFileIdRef.current = file.fileId;
+
+            console.info('从数据库加载数据成功，文件ID:', file.fileId);
+          }
         }
       } catch (error) {
         console.error('从数据库加载数据失败:', error);
@@ -828,10 +840,18 @@ const ReferCanvas = () => {
   const loadFile = useCallback(async (file: Refers) => {
     if (ReferRef.current) {
       try {
-        const jsonData = JSON.parse(file.content);
+        const refer = await db.refer.get(file.fileId) as Refers;
+        if (!refer) {
+          throw new Error('文件不存在');
+        }
+
+        const jsonData = JSON.parse(refer.content || '');
         await ReferRef.current.loadJSON(jsonData);
-        setCurrentReferId(file.id);
-        console.info('加载文件成功，文件ID:', file.id);
+
+        setCurrentFileId(refer.fileId);
+        currentFileIdRef.current = refer.fileId;
+
+        console.info('加载文件成功，文件ID:', refer.fileId);
       } catch (error) {
         console.error('加载文件失败:', error);
       }
@@ -846,11 +866,11 @@ const ReferCanvas = () => {
   // 重命名文件
   const renameFile = useCallback(async (file: Refers, newTitle: string) => {
     try {
-      await db.refers.update(file.id, {
-        title: newTitle,
-        updatedAt: Date.now()
+      const res = await db.refer.update({
+        fileId: file.fileId,
+        title: newTitle
       });
-      console.info('文件重命名成功');
+      console.info('文件重命名成功', res);
     } catch (error) {
       console.error('文件重命名失败:', error);
       throw error;
@@ -860,51 +880,60 @@ const ReferCanvas = () => {
   // 删除文件
   const deleteFile = useCallback(async (file: Refers) => {
     try {
-      await db.refers.delete(file.id);
-      console.info('文件删除成功');
+      const res = await db.refer.delete(file.fileId);
+      console.info('文件删除成功', res);
 
       // 如果删除的是当前打开的文件，清空当前文件ID
-      if (currentReferId === file.id) {
-        setCurrentReferId(null);
+      if (currentFileId === file.fileId) {
+        setCurrentFileId(null);
+        currentFileIdRef.current = undefined;
+
+        // 新建一个文件
+        newCanvas();
       }
     } catch (error) {
       console.error('文件删除失败:', error);
       throw error;
     }
-  }, [currentReferId]);
+  }, [currentFileId]);
 
   // 共用的保存函数
-  const saveReferFile = useCallback(async ({ forceNew = false }: { forceNew?: boolean } = {}) => {
+  const saveReferFile = useCallback(async ({
+    forceNew = false
+  }: {
+    forceNew?: boolean
+  } = {}): Promise<string> => {
     if (ReferRef.current) {
       const jsonData = ReferRef.current.exportJSON();
       const content = JSON.stringify(jsonData);
-      const now = Date.now();
 
+      const fileId = currentFileIdRef.current;
       try {
-        if (currentReferId && !forceNew) {
-          // 更新现有文件
-          await db.refers.update(currentReferId, {
+        if (fileId && !forceNew) {
+          // 更新现有文件 
+          await db.refer.update({
+            fileId,
             content,
-            updatedAt: now,
           });
-          console.info('数据已更新到数据库，文件ID:', currentReferId);
+          console.info('数据已更新到数据库，文件ID:', fileId);
+          return fileId;
         } else {
           // 创建新文件
           const title = `Refer_${new Date().toLocaleString()}`;
-          const newReferFileId = await db.refers.add({
+          const result = await db.refer.add({
             title,
             content,
-            createdAt: now,
-            updatedAt: now,
           });
-          console.info('数据已保存到数据库，新文件ID:', newReferFileId);
-          return newReferFileId;
+          console.info('数据已保存到数据库，新文件ID:', result.fileId);
+          return result.fileId;
         }
       } catch (error) {
         console.error('保存到数据库失败:', error);
+        throw error;
       }
     }
-  }, [currentReferId]);
+    throw new Error('ReferRef is not available');
+  }, []);
 
   // 自动保存功能
   const { save: triggerAutoSave, forceSave } = useAutoSave(
@@ -916,7 +945,8 @@ const ReferCanvas = () => {
       onSaveStart: () => {
         setAutoSaveState(prev => ({ ...prev, isSaving: true }));
       },
-      onSaveSuccess: () => {
+      onSaveSuccess: (fileId: string) => {
+        console.info('onSaveSuccess', fileId);
         setAutoSaveState(prev => ({
           ...prev,
           isSaving: false,
@@ -924,8 +954,11 @@ const ReferCanvas = () => {
           errorCount: 0,
           pendingChanges: false,
         }));
+
+        setCurrentFileId(fileId);
+        currentFileIdRef.current = fileId;
       },
-      onSaveError: (error) => {
+      onSaveError: (error: Error) => {
         console.error('自动保存失败:', error);
         setAutoSaveState(prev => ({
           ...prev,
@@ -982,13 +1015,16 @@ const ReferCanvas = () => {
         ReferRef.current.canvas.clear();
 
         // 重置当前文件ID，表示这是一个新文件
-        setCurrentReferId(null);
+        setCurrentFileId(null);
+        currentFileIdRef.current = undefined;
 
         // 立即保存数据到数据库，强制创建新文件
         const newReferFileId = await saveReferFile({ forceNew: true });
 
         if (newReferFileId) {
-          setCurrentReferId(newReferFileId);
+          setCurrentFileId(newReferFileId);
+          currentFileIdRef.current = newReferFileId;
+
           console.info('新建画布成功');
         }
       } catch (error) {
@@ -1336,7 +1372,7 @@ const ReferCanvas = () => {
 
       {/* 最近文件 */}
       <RecentFiles
-        currentReferId={currentReferId}
+        currentFileId={currentFileId}
         visible={recentFilesVisible}
         onClose={() => setRecentFilesVisible(false)}
         onSelect={loadFile}

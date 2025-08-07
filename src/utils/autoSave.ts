@@ -11,7 +11,7 @@ export interface AutoSaveOptions {
   maxRetries?: number; // 最大重试次数
   retryDelay?: number; // 重试延迟时间（毫秒）
   onSaveStart?: () => void; // 开始保存回调
-  onSaveSuccess?: () => void; // 保存成功回调
+  onSaveSuccess?: (fileId: string) => void; // 保存成功回调
   onSaveError?: (error: Error) => void; // 保存失败回调
   onSaveComplete?: () => void; // 保存完成回调
 }
@@ -27,10 +27,10 @@ export class AutoSaveManager {
   private options: Required<AutoSaveOptions>;
   private state: AutoSaveState;
   private throttledSave: ReturnType<typeof throttle>;
-  private saveFunction: () => Promise<void>;
+  private saveFunction: () => Promise<string>;
 
   constructor(
-    saveFunction: () => Promise<void>,
+    saveFunction: () => Promise<string>,
     options: AutoSaveOptions = {}
   ) {
     this.saveFunction = saveFunction;
@@ -91,11 +91,11 @@ export class AutoSaveManager {
     this.options.onSaveStart();
 
     try {
-      await this.saveFunction();
+      const fileId = await this.saveFunction();
 
       this.state.lastSaveTime = Date.now();
       this.state.errorCount = 0;
-      this.options.onSaveSuccess();
+      this.options.onSaveSuccess(fileId);
     } catch (error) {
       this.state.errorCount++;
 
@@ -147,7 +147,7 @@ export class AutoSaveManager {
  * React Hook for AutoSave
  */
 export function useAutoSave(
-  saveFunction: (...args: any[]) => Promise<any>,
+  saveFunction: (...args: any[]) => Promise<string>,
   options: AutoSaveOptions = {}
 ) {
   const autoSaveRef = useRef<AutoSaveManager | null>(null);
