@@ -857,6 +857,22 @@ const ReferCanvas = () => {
     }
   }, []);
 
+  // 删除文件
+  const deleteFile = useCallback(async (file: Refers) => {
+    try {
+      await db.refers.delete(file.id);
+      console.info('文件删除成功');
+
+      // 如果删除的是当前打开的文件，清空当前文件ID
+      if (currentReferId === file.id) {
+        setCurrentReferId(null);
+      }
+    } catch (error) {
+      console.error('文件删除失败:', error);
+      throw error;
+    }
+  }, [currentReferId]);
+
   // 共用的保存函数
   const saveReferFile = useCallback(async ({ forceNew = false }: { forceNew?: boolean } = {}) => {
     if (ReferRef.current) {
@@ -1320,10 +1336,12 @@ const ReferCanvas = () => {
 
       {/* 最近文件 */}
       <RecentFiles
+        currentReferId={currentReferId}
         visible={recentFilesVisible}
         onClose={() => setRecentFilesVisible(false)}
         onSelect={loadFile}
         onRename={renameFile}
+        onDelete={deleteFile}
       />
     </div>
   )

@@ -5,16 +5,20 @@ import styles from './index.module.less';
 
 interface RecentFilesProps {
   visible: boolean;
+  currentReferId: number | null;
   onClose: () => void;
   onSelect: (file: Refers) => void;
   onRename?: (file: Refers, newTitle: string) => void;
+  onDelete?: (file: Refers) => void;
 }
 
 const RecentFiles: React.FC<RecentFilesProps> = ({
   visible,
+  currentReferId,
   onClose,
   onSelect,
-  onRename
+  onRename,
+  onDelete
 }) => {
   const [files, setFiles] = useState<Refers[]>([]);
   const [loading, setLoading] = useState(false);
@@ -91,6 +95,20 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
     setEditTitle('');
   };
 
+  const handleDelete = async (file: Refers) => {
+    if (window.confirm('确定删除该文件吗？')) {
+      if (onDelete) {
+        try {
+          await onDelete(file);
+          // 从本地文件列表中移除
+          setFiles(prev => prev.filter(f => f.id !== file.id));
+        } catch (error) {
+          console.error('删除文件失败:', error);
+        }
+      }
+    }
+  };
+
   // 重命名 回车保存 按下esc取消
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -152,7 +170,10 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRename(file);
-                        }}>{file.title}</div>
+                        }}>
+                        <span className={styles.currentFileIcon}>{file.id === currentReferId ? '·' : ''}</span>
+                        {file.title}
+                      </div>
                     )}
                     <div className={styles.fileDate}>
                       {formatDate(file.updatedAt)}
@@ -168,6 +189,18 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
                     >
                       打开
                     </button>
+                    {onDelete && (
+                      <button
+                        className={styles.deleteButton}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(file);
+                        }}
+                        title="删除"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

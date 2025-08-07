@@ -118,6 +118,15 @@
   &:hover {
     border-bottom: 1px solid #c0c0c0;
   }
+
+  .currentFileIcon {
+    font-size: 48px;
+    color: #71c110;
+    margin-right: 4px;
+    display: inline-block;
+    line-height: 20px;
+    vertical-align: text-bottom;
+  }
 }
 
 .fileDate {
@@ -148,6 +157,24 @@
   &:active {
     background: #004085;
   }
+}
+
+.deleteButton {
+  background: none;
+    border: none;
+    font-size: 20px;
+    color: #808080;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #404040;
+      color: #e8e8e8;
+    }
 }
 
 .editContainer {
