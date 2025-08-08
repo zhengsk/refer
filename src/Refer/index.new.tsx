@@ -19,7 +19,6 @@ import { useCanvasView } from '../hooks/useCanvasView';
 import { useElementSelection } from '../hooks/useElementSelection';
 import { useContextMenu } from '../hooks/useContextMenu';
 import { useAutoSave } from '../utils/autoSave';
-import { useAddFromDataTransfer } from '../hooks/useAddFromDataTransfer';
 
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
@@ -29,9 +28,6 @@ const ReferCanvas = () => {
   const canvasEl = useRef<HTMLCanvasElement | null>(null);
   const [recentFilesVisible, setRecentFilesVisible] = useState(false);
   const element = document;
-
-  // 使用画布初始化 Hook
-  useCanvasInitialization(ReferRef, canvasEl);
 
   // 使用文件操作 Hook
   const {
@@ -44,13 +40,8 @@ const ReferCanvas = () => {
     saveReferFile,
     exportRefer,
     importRefer,
-    createNewCanvas,
+    newCanvas,
   } = useFileOperations(ReferRef);
-
-  // 显示加载数据库中的最近的 refer 文件
-  useEffect(() => {
-    loadFromDatabase()
-  }, [loadFromDatabase]);
 
   // 使用画布视图 Hook
   const {
@@ -154,17 +145,17 @@ const ReferCanvas = () => {
     };
   }, [forceSave, autoSaveState.pendingChanges]);
 
+  // 使用画布初始化 Hook
+  useCanvasInitialization(canvasEl, ReferRef);
+
   // 使用画布交互 Hook
   useCanvasInteractions(ReferRef, canvasEl);
 
-  // 使用拖拽或粘贴对象（dataTransfer）到画布 Hook
-  const { addFromDataTransfer } = useAddFromDataTransfer(ReferRef);
-
   // 使用拖拽 Hook
-  useDragAndDrop(ReferRef, addFromDataTransfer, createNewCanvas);
+  useDragAndDrop(ReferRef);
 
   // 使用剪贴板 Hook
-  useClipboard(ReferRef, canvasEl, addFromDataTransfer);
+  useClipboard(ReferRef, canvasEl, () => Promise.resolve([]));
 
   // 使用键盘快捷键 Hook
   useKeyboardShortcuts(ReferRef, element, {
@@ -173,7 +164,7 @@ const ReferCanvas = () => {
     zoomCenterTo,
     forceSave,
     loadFromDatabase,
-    createNewCanvas,
+    newCanvas,
     addText,
   });
 
@@ -216,7 +207,7 @@ const ReferCanvas = () => {
       <Toolbar
         importRefer={importRefer}
         exportRefer={exportRefer}
-        newCanvas={createNewCanvas}
+        newCanvas={newCanvas}
         showRecentFiles={showRecentFiles}
       />
 

@@ -49,9 +49,9 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
     try {
       // 只获取需要的字段，提高性能
       const recentFiles = await db.refer.list({
-        fields: ['fileId', 'title', 'updatedAt'],
+        fields: ['fileId', 'title', 'createdAt'],
         limit: 10,
-        orderBy: 'updatedAt',
+        orderBy: 'createdAt',
         order: 'desc'
       });
 
@@ -177,7 +177,7 @@ const RecentFiles: React.FC<RecentFilesProps> = ({
                       </div>
                     )}
                     <div className={styles.fileDate}>
-                      {formatDate(file.updatedAt)}
+                      {formatDate(file.createdAt)}
                     </div>
                   </div>
                   <div className={styles.fileActions}>

@@ -671,6 +671,9 @@ export default class Refer {
     return new Promise((resolve, reject) => {
       this.canvas.loadFromJSON(jsonData, resolve).then(() => {
         this.canvas.requestRenderAll();
+      }).catch((error) => {
+        console.warn('@TODO: 未解决的异常 loadJSON error', error);
+        reject(error);
       });
     });
   }

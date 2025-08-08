@@ -30,7 +30,7 @@ const Drawer: React.FC<PropertyProps> = ({
 
   useEffect(() => {
     if (elements?.length) {
-      const imageElements = elements.filter((element) => {
+      const imageElements = elements.filter((element: FabricObject) => {
         return element.type === 'image';
       });
       setImageElements(imageElements as FabricImage[]);
@@ -59,8 +59,8 @@ const Drawer: React.FC<PropertyProps> = ({
 
       {/* 显示图片 */}
       <div className={styles.imageContainer}>
-        {imageElements.map((element) => (
-          <div className={styles.image}>
+        {imageElements.map((element, index) => (
+          <div key={index} className={styles.image}>
             <img src={element.getSrc()} />
           </div>
         ))}
