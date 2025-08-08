@@ -27,7 +27,9 @@ export const useDragAndDrop = (
                   if (fileId) {
                     const json = JSON.parse(str);
                     return Refer.loadJSON(json).then(() => {
-                      Refer.canvas.requestRenderAll();
+                      requestAnimationFrame(() => {
+                        Refer.fitViewRect();
+                      });
                     });
                   }
                 });
