@@ -56,6 +56,10 @@ export const useFileOperations = (
         setCurrentFileId(refer.fileId);
         currentFileIdRef.current = refer.fileId;
 
+        requestAnimationFrame(() => {
+          ReferRef.current?.fitViewRect();
+        });
+
         console.info('加载文件成功，文件ID:', refer.fileId);
       } catch (error) {
         console.error('加载文件失败:', error);

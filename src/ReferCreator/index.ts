@@ -235,28 +235,151 @@ export default class Refer {
         this.preViewStatus.element = ele;
       }
 
-      const offset = 0;
-      const zoom = canvas.getZoom();
+      // 获取元素的边界框
+      const boundingRect = ele.getBoundingRect();
 
-      const canvasWidth = canvas.getWidth();
-      const canvasHeight = canvas.getHeight();
-
-      const elementWidth = (ele.getScaledWidth() + offset) * zoom;
-      const elementHeight = (ele.getScaledHeight() + offset) * zoom;
-
-      const widthRatio = canvasWidth / (elementWidth);
-      const heightRatio = canvasHeight / (elementHeight);
-
-      const ratio = Math.min(widthRatio, heightRatio);
-
-      // 在该点上添加一个点
-      this.animateToObject({
-        object: ele,
-        targetZoom: zoom * ratio,
-      });
-
-      if (callback) { callback(); }
+      // 直接使用内部方法，避免重复的状态保存逻辑
+      this._fitViewToRect(boundingRect, 20, callback);
     }
+  }
+
+  // 获取包含所有元素的矩形框
+  getBoundingRectOfAllObjects(): {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null {
+    const { canvas } = this;
+    const objects = canvas.getObjects();
+
+    if (objects.length === 0) {
+      return null;
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    objects.forEach(obj => {
+      // 获取对象的边界框
+      const boundingRect = obj.getBoundingRect();
+
+      minX = Math.min(minX, boundingRect.left);
+      minY = Math.min(minY, boundingRect.top);
+      maxX = Math.max(maxX, boundingRect.left + boundingRect.width);
+      maxY = Math.max(maxY, boundingRect.top + boundingRect.height);
+    });
+
+    return {
+      left: minX,
+      top: minY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+  }
+
+  // 通过矩形框适配视图
+  fitViewRect({
+    rect,
+    padding = 20,
+    callback,
+    saveState = true,
+  }: {
+    rect?: {
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+    },
+    padding?: number,
+    callback?: () => void,
+    saveState?: boolean,
+  } = {}) {
+    const { canvas } = this;
+    canvas.renderAll();
+
+    // 如果没有提供矩形框，则计算包含所有元素的矩形框
+    const boundingRect = rect || this.getBoundingRectOfAllObjects();
+
+    if (!boundingRect) {
+      console.warn('No objects found on canvas');
+      return;
+    }
+
+    // 保存当前状态
+    if (saveState) {
+      const activeObject = canvas.getActiveObject() as FabricObject;
+      this.setPreViewStatus(activeObject);
+    }
+
+    this._fitViewToRect(boundingRect, padding, callback);
+  }
+
+  // 内部方法：根据矩形框适配视图
+  private _fitViewToRect(
+    rect: {
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+    },
+    padding: number = 20,
+    callback?: () => void
+  ) {
+    const { canvas } = this;
+    const canvasWidth = canvas.getWidth();
+    const canvasHeight = canvas.getHeight();
+
+    // 计算缩放比例，考虑padding
+    const widthRatio = (canvasWidth - padding * 2) / rect.width;
+    const heightRatio = (canvasHeight - padding * 2) / rect.height;
+    const ratio = Math.min(widthRatio, heightRatio);
+
+    // 计算矩形框的中心点
+    const centerPoint = new Point(
+      rect.left + rect.width / 2,
+      rect.top + rect.height / 2
+    );
+
+    // 动画到目标位置和缩放
+    this.animateToPoint({
+      point: centerPoint,
+      targetZoom: ratio,
+      duration: 200
+    });
+
+    if (callback) { callback(); }
+  }
+
+  // 适配选中的元素
+  fitViewSelected({
+    padding = 20,
+    callback,
+    saveState = true,
+  }: {
+    padding?: number,
+    callback?: () => void,
+    saveState?: boolean,
+  } = {}) {
+    const { canvas } = this;
+    const activeObject = canvas.getActiveObject();
+
+    if (!activeObject) {
+      console.warn('No active object found');
+      return;
+    }
+
+    if (saveState) {
+      this.setPreViewStatus(activeObject as FabricObject);
+    }
+
+    // 获取选中对象的边界框
+    const boundingRect = activeObject.getBoundingRect();
+
+    // 使用内部方法适配视图
+    this._fitViewToRect(boundingRect, padding, callback);
   }
 
   async addImgFromURL({

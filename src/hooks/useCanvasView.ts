@@ -1,5 +1,5 @@
 import { Point } from 'fabric';
-import type { ActiveSelection, FabricObject, IText, TEvent } from 'fabric/fabric-impl';
+import type { FabricObject, IText, TEvent } from 'fabric/fabric-impl';
 import { useCallback, useEffect, useState } from 'react';
 import ReferCreator from '../ReferCreator';
 
@@ -17,6 +17,17 @@ export const useCanvasView = (
       if (!element) {
         element = Refer.getActiveObject();
       }
+
+      // 没有选中元素，则适配视图
+      if (!element) {
+        if (!Refer.preViewStatus) {
+          Refer.fitViewRect({ saveState: true });
+        } else {
+          Refer.restorePreViewStatus();
+        }
+        return;
+      }
+
       const preViewStatus = Refer.preViewStatus;
       if (!preViewStatus) {
         Refer.fitViewElement({ element });
@@ -50,17 +61,8 @@ export const useCanvasView = (
   const allElementFitView = useCallback(() => {
     const Refer = ReferRef.current;
     if (Refer) {
-      const activeEle = Refer.getActiveObject();
-      Refer.canvas.discardActiveObject();
-
-      const ele = Refer.selectElement();
-      Refer.fitViewElement({ element: ele, saveState: false });
-      Refer.canvas.discardActiveObject();
-
-      if (activeEle) {
-        const elements = activeEle.isType('activeselection') ? (activeEle as ActiveSelection).getObjects() : activeEle;
-        Refer.selectElement(elements);
-      }
+      // 使用新的 fitViewRect 方法，通过矩形框适配视图
+      Refer.fitViewRect({ saveState: false });
     }
   }, []);
 

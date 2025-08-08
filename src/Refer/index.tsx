@@ -49,7 +49,11 @@ const ReferCanvas = () => {
 
   // 显示加载数据库中的最近的 refer 文件
   useEffect(() => {
-    loadFromDatabase()
+    loadFromDatabase().then(() => {
+      requestAnimationFrame(() => {
+        ReferRef.current?.fitViewRect();
+      });
+    });
   }, [loadFromDatabase]);
 
   // 使用画布视图 Hook

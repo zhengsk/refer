@@ -28,9 +28,9 @@ export const useDragAndDrop = (
                     const json = JSON.parse(str);
                     return Refer.loadJSON(json).then(() => {
                       Refer.canvas.requestRenderAll();
-                    })
+                    });
                   }
-                })
+                });
               } catch {
                 // Do nothing;
               }
