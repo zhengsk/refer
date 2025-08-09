@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import ReferCanvas from '../../Refer';
+import ReferCanvas from '../../components/ReferCanvas';
 import styles from './index.module.less';
 
 const CanvasPage: React.FC = () => {

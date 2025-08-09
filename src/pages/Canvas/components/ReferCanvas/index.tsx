@@ -1,27 +1,27 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import ReferCreator from '../ReferCreator';
+import ReferCreator from '../../../../ReferCreator';
 import styles from './index.module.less';
-import Toolbar from '../components/toolbar';
-import ContextMenu from '../components/context-menu';
-import Drawer from '../components/Drawer';
-import Property from '../components/Property';
-import AutoSaveIndicator from '../components/AutoSaveIndicator';
-import RecentFiles from '../components/RecentFiles';
+import Toolbar from '../../../../components/toolbar';
+import ContextMenu from '../../../../components/context-menu';
+import Drawer from '../../../../components/Drawer';
+import Property from '../../../../components/Property';
+import AutoSaveIndicator from '../../../../components/AutoSaveIndicator';
+import RecentFiles from '../../../../components/RecentFiles';
 
 // 导入自定义 Hook
-import { useCanvasInitialization } from '../hooks/useCanvasInitialization';
-import { useCanvasInteractions } from '../hooks/useCanvasInteractions';
-import { useFileOperations } from '../hooks/useFileOperations';
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { useDragAndDrop } from '../hooks/useDragAndDrop';
-import { useClipboard } from '../hooks/useClipboard';
-import { useCanvasView } from '../hooks/useCanvasView';
-import { useElementSelection } from '../hooks/useElementSelection';
-import { useContextMenu } from '../hooks/useContextMenu';
-import { useAutoSave } from '../utils/autoSave';
-import { useAddFromDataTransfer } from '../hooks/useAddFromDataTransfer';
-import db from '../db';
+import { useCanvasInitialization } from '../../../../hooks/useCanvasInitialization';
+import { useCanvasInteractions } from '../../../../hooks/useCanvasInteractions';
+import { useFileOperations } from '../../../../hooks/useFileOperations';
+import { useKeyboardShortcuts } from '../../../../hooks/useKeyboardShortcuts';
+import { useDragAndDrop } from '../../../../hooks/useDragAndDrop';
+import { useClipboard } from '../../../../hooks/useClipboard';
+import { useCanvasView } from '../../../../hooks/useCanvasView';
+import { useElementSelection } from '../../../../hooks/useElementSelection';
+import { useContextMenu } from '../../../../hooks/useContextMenu';
+import { useAutoSave } from '../../../../utils/autoSave';
+import { useAddFromDataTransfer } from '../../../../hooks/useAddFromDataTransfer';
+import db from '../../../../db';
 
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;

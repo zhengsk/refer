@@ -40,7 +40,7 @@ const Layout: React.FC = () => {
           </NavLink>
           <NavLink
             to="/canvas/new"
-            className={styles.navLink}
+            className={({ isActive }) => isActive ? styles.activeLink : styles.navLink}
           >
             新建画布
           </NavLink>
