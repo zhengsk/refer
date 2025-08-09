@@ -12,16 +12,16 @@
 }
 
 .container {
-  background: #2c2c2c;
-  border: 1px solid #404040;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-xl);
   min-width: 400px;
   max-width: 600px;
   max-height: 80vh;
   overflow: hidden;
   animation: slideIn 0.2s ease-out;
-  color: #e8e8e8;
+  color: var(--text-primary);
 }
 
 .header {
@@ -30,20 +30,20 @@
   align-items: center;
   padding: 16px 20px;
   border-bottom: 1px solid #404040;
-  background: #1e1e1e;
+  background: var(--bg-primary);
 
   h3 {
     margin: 0;
     font-size: 16px;
     font-weight: 600;
-    color: #e8e8e8;
+    color: var(--text-primary);
   }
 
   .closeButton {
     background: none;
     border: none;
     font-size: 20px;
-    color: #808080;
+    color: var(--text-tertiary);
     cursor: pointer;
     padding: 0;
     border-radius: 4px;
@@ -52,8 +52,8 @@
     transition: all 0.2s;
 
     &:hover {
-      background: #404040;
-      color: #e8e8e8;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
     }
   }
 }
@@ -66,14 +66,14 @@
 .loading {
   padding: 40px 20px;
   text-align: center;
-  color: #808080;
+  color: var(--text-tertiary);
   font-size: 14px;
 }
 
 .empty {
   padding: 40px 20px;
   text-align: center;
-  color: #808080;
+  color: var(--text-tertiary);
   font-size: 14px;
 }
 
@@ -90,7 +90,7 @@
   border-bottom: 1px solid #404040;
 
   &:hover {
-    background: #404040;
+    background: var(--bg-tertiary);
   }
 
   &:last-child {
@@ -107,7 +107,7 @@
 .fileTitle {
   font-size: 14px;
   font-weight: 500;
-  color: #e8e8e8;
+  color: var(--text-primary);
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -116,7 +116,7 @@
   border-bottom: 1px solid transparent;
 
   &:hover {
-    border-bottom: 1px solid #c0c0c0;
+    border-bottom: 1px solid var(--text-secondary);
   }
 
   .currentFileIcon {
@@ -131,7 +131,7 @@
 
 .fileDate {
   font-size: 12px;
-  color: #808080;
+  color: var(--text-tertiary);
 }
 
 .fileActions {
@@ -141,8 +141,8 @@
 }
 
 .loadButton {
-  background: #007bff;
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-primary);
   border: none;
   padding: 8px 20px;
   border-radius: 4px;
@@ -151,11 +151,11 @@
   transition: background-color 0.2s;
 
   &:hover {
-    background: #0056b3;
+    background: var(--primary-hover);
   }
 
   &:active {
-    background: #004085;
+    background: #003d82;
   }
 }
 
@@ -163,7 +163,7 @@
   background: none;
     border: none;
     font-size: 20px;
-    color: #808080;
+    color: var(--text-tertiary);
     cursor: pointer;
     padding: 0;
     border-radius: 4px;
@@ -172,8 +172,8 @@
     transition: all 0.2s;
 
     &:hover {
-      background: #404040;
-      color: #e8e8e8;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
     }
 }
 
@@ -187,20 +187,20 @@
 .editInput {
   flex: 1;
   padding: 6px 10px;
-  border: 1px solid #606060;
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   font-size: 14px;
   outline: none;
-  background: #1e1e1e;
-  color: #e8e8e8;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 
   &:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.25);
   }
 
   &::placeholder {
-    color: #808080;
+    color: var(--text-tertiary);
   }
 }
 

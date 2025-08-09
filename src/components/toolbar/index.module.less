@@ -6,20 +6,24 @@
   align-items: center;
   gap: 10px;
 
-  background-color: rgb(30, 30, 30);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
   border-radius: 10px;
   padding: 5px 10px;
+  box-shadow: var(--shadow-md);
 }
 
 .toolbarItem {
   width: 20px;
   height: 20px;
   border-radius: 5px;
-  color: rgb(255, 255, 255);
+  color: var(--text-primary);
   cursor: pointer;
   padding: 5px;
+  transition: all 0.2s ease;
 
   &:hover {
-    background-color: #141414;
+    background-color: var(--bg-tertiary);
+    color: var(--primary-color);
   }
 }

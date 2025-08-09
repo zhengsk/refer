@@ -1,13 +1,13 @@
 .contextMenu {
   position: fixed;
-  background: #2c2c2c;
-  border: 1px solid #404040;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
   border-radius: 6px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-lg);
   padding: 6px 0;
   min-width: 180px;
   z-index: 1000;
-  color: #e8e8e8;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
@@ -20,11 +20,11 @@
   user-select: none;
 
   &:hover {
-    background-color: #404040;
+    background-color: var(--bg-tertiary);
   }
 
   &.disabled {
-    color: #808080;
+    color: var(--text-disabled);
     cursor: not-allowed;
 
     &:hover {
@@ -47,5 +47,5 @@
 .divider {
   margin: 6px 0;
   height: 1px;
-  background-color: #404040;
+  background-color: var(--border-primary);
 } 

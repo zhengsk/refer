@@ -2,18 +2,18 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f8f9fa;
+  background-color: var(--bg-primary);
 }
 
 .header {
-  background: #fff;
-  border-bottom: 1px solid #e9ecef;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
   padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 64px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-md);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -32,7 +32,7 @@
 .siteName {
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .nav {
@@ -42,26 +42,26 @@
 
 .navLink {
   text-decoration: none;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
   padding: 8px 16px;
   border-radius: 6px;
   transition: all 0.2s ease;
   
   &:hover {
-    color: #007bff;
-    background-color: #f0f8ff;
+    color: var(--primary-color);
+    background-color: var(--primary-bg);
   }
 }
 
 .activeLink {
   composes: navLink;
-  color: #007bff;
-  background-color: #e7f3ff;
+  color: var(--primary-color);
+  background-color: var(--primary-light);
   
   &:hover {
-    color: #0056b3;
-    background-color: #d1ecf1;
+    color: var(--primary-hover);
+    background-color: var(--primary-bg);
   }
 }
 
@@ -71,11 +71,11 @@
 }
 
 .footer {
-  background: #fff;
-  border-top: 1px solid #e9ecef;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-primary);
   padding: 16px 24px;
   text-align: center;
-  color: #666;
+  color: var(--text-secondary);
   
   p {
     margin: 0;
