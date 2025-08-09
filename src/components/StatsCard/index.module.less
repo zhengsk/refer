@@ -1,0 +1,139 @@
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary-color);
+    opacity: 0.8;
+  }
+
+  &.success::before {
+    background: var(--success-color);
+  }
+
+  &.warning::before {
+    background: var(--warning-color);
+  }
+
+  &.info::before {
+    background: var(--info-color);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.titleSection {
+  flex: 1;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.icon {
+  font-size: 24px;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.content {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.trend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: var(--bg-tertiary);
+
+  &.up {
+    color: var(--success-color);
+    background: rgba(82, 196, 26, 0.1);
+  }
+
+  &.down {
+    color: var(--error-color);
+    background: rgba(255, 77, 79, 0.1);
+  }
+
+  &.neutral {
+    color: var(--text-secondary);
+  }
+}
+
+.trendIcon {
+  font-size: 14px;
+}
+
+.trendValue {
+  font-weight: 500;
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .card {
+    padding: 16px;
+  }
+
+  .value {
+    font-size: 24px;
+  }
+
+  .content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

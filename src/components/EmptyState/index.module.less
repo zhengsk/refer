@@ -1,0 +1,144 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-secondary);
+
+  &.small {
+    padding: 40px 20px;
+  }
+
+  &.medium {
+    padding: 60px 20px;
+  }
+
+  &.large {
+    padding: 80px 20px;
+    min-height: 300px;
+  }
+}
+
+.icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  border: 1px solid var(--border-primary);
+
+  .small & {
+    font-size: 48px;
+    width: 80px;
+    height: 80px;
+  }
+
+  .large & {
+    font-size: 80px;
+    width: 120px;
+    height: 120px;
+  }
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+
+  .small & {
+    font-size: 18px;
+  }
+
+  .large & {
+    font-size: 24px;
+  }
+}
+
+.description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 24px 0;
+  max-width: 400px;
+  line-height: 1.5;
+
+  .small & {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  .large & {
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
+}
+
+.action {
+  margin-top: 8px;
+}
+
+.actionButton {
+  background: var(--primary-color);
+  color: var(--text-primary);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+
+  &:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  .small & {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+
+  .large & {
+    padding: 14px 28px;
+    font-size: 16px;
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .container {
+    &.medium, &.large {
+      padding: 40px 16px;
+    }
+  }
+
+  .icon {
+    font-size: 56px;
+    width: 88px;
+    height: 88px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .description {
+    font-size: 14px;
+  }
+}
