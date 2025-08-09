@@ -1,0 +1,269 @@
+.galleryPage {
+  min-height: calc(100vh - 200px);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  
+  h1 {
+    font-size: 32px;
+    font-weight: 600;
+    margin: 0;
+    color: #1a1a1a;
+  }
+}
+
+.newButton {
+  background: #007bff;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+  }
+}
+
+.controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  align-items: center;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.searchBox {
+  flex: 1;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+  
+  &::placeholder {
+    color: #999;
+  }
+}
+
+.sortControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sortSelect {
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+}
+
+.sortOrderButton {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #e9ecef;
+  }
+}
+
+.stats {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 80px 0;
+  color: #666;
+  
+  h3 {
+    font-size: 24px;
+    margin: 0 0 16px 0;
+    color: #1a1a1a;
+  }
+  
+  p {
+    font-size: 16px;
+    margin: 0 0 32px 0;
+  }
+}
+
+.createFirstButton {
+  background: #007bff;
+  color: white;
+  padding: 14px 32px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+  position: relative;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    
+    .actions {
+      opacity: 1;
+    }
+  }
+}
+
+.cardLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.preview {
+  width: 100%;
+  height: 200px;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.placeholderPreview {
+  color: #999;
+  font-size: 14px;
+}
+
+.cardContent {
+  padding: 16px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+.actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.actionButton {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  
+  &:hover {
+    background: white;
+    transform: scale(1.1);
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    
+    h1 {
+      text-align: center;
+    }
+  }
+  
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+}

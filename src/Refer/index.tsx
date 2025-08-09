@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import ReferCreator from '../ReferCreator';
 import styles from './index.module.less';
 import Toolbar from '../components/toolbar';
@@ -20,11 +21,14 @@ import { useElementSelection } from '../hooks/useElementSelection';
 import { useContextMenu } from '../hooks/useContextMenu';
 import { useAutoSave } from '../utils/autoSave';
 import { useAddFromDataTransfer } from '../hooks/useAddFromDataTransfer';
+import db from '../db';
 
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
 
 const ReferCanvas = () => {
+  const navigate = useNavigate();
+  const { fileId } = useParams<{ fileId?: string }>();
   const ReferRef = useRef<ReferCreator>();
   const canvasEl = useRef<HTMLCanvasElement | null>(null);
   const [recentFilesVisible, setRecentFilesVisible] = useState(false);
@@ -47,14 +51,32 @@ const ReferCanvas = () => {
     createNewCanvas,
   } = useFileOperations(ReferRef);
 
-  // 显示加载数据库中的最近的 refer 文件
+  // 处理文件 ID 参数和加载数据库
   useEffect(() => {
-    loadFromDatabase().then(() => {
-      requestAnimationFrame(() => {
-        ReferRef.current?.fitViewRect();
+    if (fileId && fileId !== 'new') {
+      // 如果有特定的文件 ID，先获取文件对象再加载
+      db.refer.get(fileId).then((file) => {
+        if (file && file.fileId) {
+          loadFile(file as any).then(() => {
+            requestAnimationFrame(() => {
+              ReferRef.current?.fitViewRect();
+            });
+          });
+        }
       });
-    });
-  }, [loadFromDatabase]);
+    } else {
+      // 否则加载最近的文件或创建新文件
+      if (fileId === 'new') {
+        createNewCanvas();
+      } else {
+        loadFromDatabase().then(() => {
+          requestAnimationFrame(() => {
+            ReferRef.current?.fitViewRect();
+          });
+        });
+      }
+    }
+  }, [fileId, loadFromDatabase, loadFile, createNewCanvas]);
 
   // 使用画布视图 Hook
   const {
@@ -195,6 +217,13 @@ const ReferCanvas = () => {
       />
       {/* Logo */}
       <div className={styles.logo}>
+        <button
+          className={styles.backButton}
+          onClick={() => navigate('/')}
+          title="返回首页"
+        >
+          ←
+        </button>
         <a href='https://huaban.com'>
           <img
             src='https://st0.dancf.com/static/02/202201151128-a455.svg'

@@ -1,0 +1,110 @@
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+}
+
+.header {
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  img {
+    border-radius: 4px;
+  }
+}
+
+.siteName {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.nav {
+  display: flex;
+  gap: 32px;
+}
+
+.navLink {
+  text-decoration: none;
+  color: #666;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: #007bff;
+    background-color: #f0f8ff;
+  }
+}
+
+.activeLink {
+  composes: navLink;
+  color: #007bff;
+  background-color: #e7f3ff;
+  
+  &:hover {
+    color: #0056b3;
+    background-color: #d1ecf1;
+  }
+}
+
+.main {
+  flex: 1;
+  padding: 24px 60px;
+}
+
+.footer {
+  background: #fff;
+  border-top: 1px solid #e9ecef;
+  padding: 16px 24px;
+  text-align: center;
+  color: #666;
+  
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .header {
+    padding: 0 16px;
+    flex-direction: column;
+    height: auto;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    gap: 16px;
+  }
+  
+  .nav {
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .main {
+    padding: 16px;
+  }
+  
+  .siteName {
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,96 @@
+.notFoundPage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.content {
+  max-width: 500px;
+  padding: 40px 20px;
+}
+
+.title {
+  font-size: 120px;
+  font-weight: 700;
+  color: #007bff;
+  margin: 0 0 16px 0;
+  line-height: 1;
+}
+
+.subtitle {
+  font-size: 32px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+}
+
+.description {
+  font-size: 18px;
+  color: #666;
+  margin: 0 0 32px 0;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.homeButton {
+  background: #007bff;
+  color: white;
+  padding: 14px 32px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  }
+}
+
+.galleryButton {
+  background: transparent;
+  color: #007bff;
+  padding: 14px 32px;
+  border: 2px solid #007bff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #007bff;
+    color: white;
+    transform: translateY(-2px);
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .title {
+    font-size: 80px;
+  }
+  
+  .subtitle {
+    font-size: 24px;
+  }
+  
+  .description {
+    font-size: 16px;
+  }
+  
+  .actions {
+    flex-direction: column;
+    align-items: center;
+  }
+}
