@@ -20,6 +20,7 @@ import { useElementSelection } from '../hooks/useElementSelection';
 import { useContextMenu } from '../hooks/useContextMenu';
 import { useAutoSave } from '../utils/autoSave';
 import { useAddFromDataTransfer } from '../hooks/useAddFromDataTransfer';
+import Icon from '../components/icons';
 
 const vw = document.documentElement.clientWidth;
 const vh = document.documentElement.clientHeight;
@@ -195,15 +196,10 @@ const ReferCanvas = () => {
       />
       {/* Logo */}
       <div className={styles.logo}>
-        <a href='https://huaban.com'>
-          <img
-            src='https://st0.dancf.com/static/02/202201151128-a455.svg'
-            title='花瓣网'
-            width={24}
-            height={24}
-          />
+        <a href='https://zhengsk.github.io/refer' className={styles.logoLink}>
+          <Icon name='logo' style={{ width: 32 }} />
+          <span className={styles.siteName}>参考设计</span>
         </a>
-        <span className={styles.siteName}>花瓣参考</span>
       </div>
 
       {/* zoom */}
